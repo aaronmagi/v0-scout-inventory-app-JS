@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { getBackendSrv } from "@grafana/runtime"
-import { useStyles2, LoadingPlaceholder, Button, Tab, TabsBar, Icon } from "@grafana/ui"
+import { useStyles2, LoadingPlaceholder, Button, Icon } from "@grafana/ui"
 import { css } from "@emotion/css"
 import type { GrafanaTheme2 } from "@grafana/data"
 import { API_BASE_URL } from "../constants"
@@ -78,15 +78,57 @@ export function ServerDetailsPage() {
         </Button>
       </div>
 
-      <TabsBar>
-        <Tab label="Summary" active={activeTab === "summary"} onChangeTab={() => setActiveTab("summary")} />
-        <Tab label="Processors" active={activeTab === "processors"} onChangeTab={() => setActiveTab("processors")} />
-        <Tab label="Memory" active={activeTab === "memory"} onChangeTab={() => setActiveTab("memory")} />
-        <Tab label="Storage" active={activeTab === "storage"} onChangeTab={() => setActiveTab("storage")} />
-        <Tab label="Network" active={activeTab === "network"} onChangeTab={() => setActiveTab("network")} />
-        <Tab label="Power" active={activeTab === "power"} onChangeTab={() => setActiveTab("power")} />
-        <Tab label="System Info" active={activeTab === "system-info"} onChangeTab={() => setActiveTab("system-info")} />
-      </TabsBar>
+      {/* Custom tabs implementation */}
+      <div className="flex border-b border-gray-200 mb-4">
+        <div
+          className={`px-4 py-2 cursor-pointer ${
+            activeTab === "summary" ? "border-b-2 border-blue-500 font-medium" : "text-gray-500"
+          }`}
+          onClick={() => setActiveTab("summary")}
+        >
+          Summary
+        </div>
+        <div
+          className={`px-4 py-2 cursor-pointer ${
+            activeTab === "processors" ? "border-b-2 border-blue-500 font-medium" : "text-gray-500"
+          }`}
+          onClick={() => setActiveTab("processors")}
+        >
+          Processors
+        </div>
+        <div
+          className={`px-4 py-2 cursor-pointer ${
+            activeTab === "memory" ? "border-b-2 border-blue-500 font-medium" : "text-gray-500"
+          }`}
+          onClick={() => setActiveTab("memory")}
+        >
+          Memory
+        </div>
+        <div
+          className={`px-4 py-2 cursor-pointer ${
+            activeTab === "storage" ? "border-b-2 border-blue-500 font-medium" : "text-gray-500"
+          }`}
+          onClick={() => setActiveTab("storage")}
+        >
+          Storage
+        </div>
+        <div
+          className={`px-4 py-2 cursor-pointer ${
+            activeTab === "network" ? "border-b-2 border-blue-500 font-medium" : "text-gray-500"
+          }`}
+          onClick={() => setActiveTab("network")}
+        >
+          Network
+        </div>
+        <div
+          className={`px-4 py-2 cursor-pointer ${
+            activeTab === "system-info" ? "border-b-2 border-blue-500 font-medium" : "text-gray-500"
+          }`}
+          onClick={() => setActiveTab("system-info")}
+        >
+          System Info
+        </div>
+      </div>
 
       <div className={styles.content}>
         {activeTab === "summary" && (

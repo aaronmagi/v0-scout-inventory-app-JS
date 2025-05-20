@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { getBackendSrv } from "@grafana/runtime"
-import { useStyles2, LoadingPlaceholder, Button, Input, TextArea, Select, Tab, TabsBar } from "@grafana/ui"
+import { useStyles2, LoadingPlaceholder, Button, Input, TextArea, Select } from "@grafana/ui"
 import { css } from "@emotion/css"
 import type { GrafanaTheme2 } from "@grafana/data"
 import { API_BASE_URL } from "../constants"
@@ -274,11 +274,33 @@ export function FiltersPage() {
           />
         </div>
 
-        <TabsBar>
-          <Tab label="Basic" active={activeTab === "basic"} onChangeTab={() => setActiveTab("basic")} />
-          <Tab label="Advanced" active={activeTab === "advanced"} onChangeTab={() => setActiveTab("advanced")} />
-          <Tab label="SQL Editor" active={activeTab === "sql"} onChangeTab={() => setActiveTab("sql")} />
-        </TabsBar>
+        {/* Custom tabs implementation */}
+        <div className="flex border-b border-gray-200 mb-4">
+          <div
+            className={`px-4 py-2 cursor-pointer ${
+              activeTab === "basic" ? "border-b-2 border-blue-500 font-medium" : "text-gray-500"
+            }`}
+            onClick={() => setActiveTab("basic")}
+          >
+            Basic
+          </div>
+          <div
+            className={`px-4 py-2 cursor-pointer ${
+              activeTab === "advanced" ? "border-b-2 border-blue-500 font-medium" : "text-gray-500"
+            }`}
+            onClick={() => setActiveTab("advanced")}
+          >
+            Advanced
+          </div>
+          <div
+            className={`px-4 py-2 cursor-pointer ${
+              activeTab === "sql" ? "border-b-2 border-blue-500 font-medium" : "text-gray-500"
+            }`}
+            onClick={() => setActiveTab("sql")}
+          >
+            SQL Editor
+          </div>
+        </div>
 
         <div className={styles.tabContent}>
           {activeTab === "basic" && (

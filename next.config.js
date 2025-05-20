@@ -22,6 +22,14 @@ const nextConfig = {
       "./Cascader/optionMappings.mjs": path.resolve(__dirname, "./src/shims/optionMappings.js"),
     }
 
+    // Add fallback for any other missing modules
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      path: false,
+      os: false,
+    }
+
     return config
   },
 }
