@@ -28,8 +28,26 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { serversToCSV, downloadCSV } from "@/lib/csv-utils"
 
 const ITEMS_PER_PAGE = 10
+
+// Define the Server type
+type Server = {
+  id: string
+  hostname: string
+  ip_address: string
+  operating_system: string
+  cpu_cores: number
+  memory_gb: number
+  disk_space_gb: number
+  location: string
+  owner: string
+  environment: string
+  application: string
+  last_updated: string
+  status: string
+}
 
 export function Dashboard() {
   const router = useRouter()
@@ -41,6 +59,47 @@ export function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1)
   const [filteredServers, setFilteredServers] = useState(serverData)
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
+  const [statusCounts, setStatusCounts] = useState({
+    critical: 0,
+    warning: 0,
+    normal: 0,
+    unknown: 0,
+  })
+  const [activeStatusFilter, setActiveStatusFilter] = useState<string | null>(null)
+
+  const applySearchFilter = (query: string) => {
+    let results = serverData
+
+    // Apply status filter if active
+    if (activeStatusFilter) {
+      results = results.filter((server) => server.status === activeStatusFilter)
+    }
+
+    // Then apply search query if present
+    if (query) {
+      results = results.filter((server) => {
+        const searchLower = query.toLowerCase()
+        const name = server.name?.toLowerCase() || ""
+        const ipAddress = server.ipAddress?.toLowerCase() || ""
+        const model = server.model?.toLowerCase() || ""
+        const identifier = server.identifier?.toLowerCase() || ""
+        const generation = server.generation?.toLowerCase() || ""
+        const managementController = server.managementController?.toLowerCase() || ""
+
+        return (
+          name.includes(searchLower) ||
+          ipAddress.includes(searchLower) ||
+          model.includes(searchLower) ||
+          identifier.includes(searchLower) ||
+          generation.includes(searchLower) ||
+          managementController.includes(searchLower)
+        )
+      })
+    }
+
+    setFilteredServers(results)
+  }
 
   // Apply filters when selectedFilter changes
   useEffect(() => {
@@ -112,18 +171,31 @@ export function Dashboard() {
           break
       }
 
+      // Apply status filter if active
+      if (activeStatusFilter) {
+        results = results.filter((server) => server.status === activeStatusFilter)
+      }
+
       // Apply search filter on top of the selected filter
       if (searchQuery) {
-        results = results.filter(
-          (server) =>
-            server.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            server.ipAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            server.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            server.identifier.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (server.generation && server.generation.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (server.managementController &&
-              server.managementController.toLowerCase().includes(searchQuery.toLowerCase())),
-        )
+        results = results.filter((server) => {
+          const query = searchQuery.toLowerCase()
+          const name = server.name?.toLowerCase() || ""
+          const ipAddress = server.ipAddress?.toLowerCase() || ""
+          const model = server.model?.toLowerCase() || ""
+          const identifier = server.identifier?.toLowerCase() || ""
+          const generation = server.generation?.toLowerCase() || ""
+          const managementController = server.managementController?.toLowerCase() || ""
+
+          return (
+            name.includes(query) ||
+            ipAddress.includes(query) ||
+            model.includes(query) ||
+            identifier.includes(query) ||
+            generation.includes(query) ||
+            managementController.includes(query)
+          )
+        })
       }
 
       setFilteredServers(results)
@@ -134,27 +206,12 @@ export function Dashboard() {
         description: `${results.length} servers match this filter`,
       })
     }
-  }, [selectedFilter, searchQuery, toast])
+  }, [selectedFilter, searchQuery, toast, activeStatusFilter])
 
-  // Function to apply just the search filter
-  const applySearchFilter = (query: string) => {
-    if (!query && selectedFilter === "all-servers") {
-      setFilteredServers(serverData)
-      return
-    }
-
-    const results = serverData.filter(
-      (server) =>
-        server.name.toLowerCase().includes(query.toLowerCase()) ||
-        server.ipAddress.toLowerCase().includes(query.toLowerCase()) ||
-        server.model.toLowerCase().includes(query.toLowerCase()) ||
-        server.identifier.toLowerCase().includes(query.toLowerCase()) ||
-        (server.generation && server.generation.toLowerCase().includes(query.toLowerCase())) ||
-        (server.managementController && server.managementController.toLowerCase().includes(query.toLowerCase())),
-    )
-
-    setFilteredServers(results)
-  }
+  useEffect(() => {
+    const counts = calculateStatusCounts(filteredServers)
+    setStatusCounts(counts)
+  }, [filteredServers])
 
   const handleSelectAllServers = (checked: boolean) => {
     if (checked) {
@@ -199,6 +256,7 @@ export function Dashboard() {
 
   const handleClearSearch = () => {
     setSearchQuery("")
+    setActiveStatusFilter(null)
     setCurrentPage(1) // Reset to first page when clearing search
 
     if (selectedFilter === "all-servers") {
@@ -206,11 +264,70 @@ export function Dashboard() {
     }
   }
 
-  const handleDownloadCSV = () => {
-    toast({
-      title: "Download started",
-      description: "Your CSV file is being generated and will download shortly.",
+  const handleDownloadCSV = async () => {
+    try {
+      setIsExporting(true)
+
+      // Show loading toast
+      toast({
+        title: "Preparing download",
+        description: "Gathering server data for export...",
+      })
+
+      // Fetch all server details from the API
+      const response = await fetch("/api/export/servers")
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch server data")
+      }
+
+      const allServerData = await response.json()
+
+      // Convert server data to CSV
+      const csvContent = serversToCSV(allServerData)
+
+      // Generate filename with current date
+      const date = new Date().toISOString().split("T")[0]
+      const filename = `server-inventory-${date}.csv`
+
+      // Trigger download
+      downloadCSV(csvContent, filename)
+
+      // Show success toast
+      toast({
+        title: "Download complete",
+        description: `${allServerData.length} servers exported to ${filename}`,
+      })
+    } catch (error) {
+      console.error("Error exporting CSV:", error)
+
+      // Show error toast
+      toast({
+        title: "Download failed",
+        description: "There was an error exporting the server data. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const calculateStatusCounts = (servers: any[]) => {
+    const counts = {
+      critical: 0,
+      warning: 0,
+      normal: 0,
+      unknown: 0,
+    }
+
+    servers.forEach((server) => {
+      if (server.status === "critical") counts.critical++
+      else if (server.status === "warning") counts.warning++
+      else if (server.status === "normal") counts.normal++
+      else counts.unknown++
     })
+
+    return counts
   }
 
   // Calculate pagination
@@ -278,6 +395,50 @@ export function Dashboard() {
     }
   }
 
+  const handleStatusCardClick = (status: string) => {
+    // If already filtered by this status, clear the filter
+    if (activeStatusFilter === status) {
+      setActiveStatusFilter(null)
+    } else {
+      setActiveStatusFilter(status)
+    }
+
+    setCurrentPage(1) // Reset to first page
+
+    // If we're on the all-servers filter, just apply the status filter
+    if (selectedFilter === "all-servers") {
+      let results = serverData
+
+      if (status) {
+        results = results.filter((server) => server.status === status)
+      }
+
+      // Apply search query if present
+      if (searchQuery) {
+        results = results.filter((server) => {
+          const searchLower = searchQuery.toLowerCase()
+          const name = server.name?.toLowerCase() || ""
+          const ipAddress = server.ipAddress?.toLowerCase() || ""
+          const model = server.model?.toLowerCase() || ""
+          const identifier = server.identifier?.toLowerCase() || ""
+          const generation = server.generation?.toLowerCase() || ""
+          const managementController = server.managementController?.toLowerCase() || ""
+
+          return (
+            name.includes(searchLower) ||
+            ipAddress.includes(searchLower) ||
+            model.includes(searchLower) ||
+            identifier.includes(searchLower) ||
+            generation.includes(searchLower) ||
+            managementController.includes(searchLower)
+          )
+        })
+      }
+
+      setFilteredServers(results)
+    }
+  }
+
   return (
     <main className="flex-1 p-4 overflow-auto">
       <div className="flex justify-between items-center mb-4">
@@ -287,46 +448,66 @@ export function Dashboard() {
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button size="sm">Actions</Button>
         </div>
       </div>
 
       <div className="grid grid-cols-4 gap-4 mb-5">
-        <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
+        <div
+          className={`bg-white p-4 rounded-lg shadow flex items-center justify-between cursor-pointer hover:bg-gray-50 ${activeStatusFilter === "critical" ? "ring-2 ring-red-500" : ""}`}
+          onClick={() => handleStatusCardClick("critical")}
+        >
           <div>
-            <div className="text-2xl font-bold">59</div>
-            <div className="text-sm text-gray-500">Security</div>
+            <div className="text-2xl font-bold">{statusCounts.critical}</div>
+            <div className="text-sm text-gray-500">Critical</div>
           </div>
           <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white text-xl">!</div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
+        <div
+          className={`bg-white p-4 rounded-lg shadow flex items-center justify-between cursor-pointer hover:bg-gray-50 ${activeStatusFilter === "warning" ? "ring-2 ring-yellow-500" : ""}`}
+          onClick={() => handleStatusCardClick("warning")}
+        >
           <div>
-            <div className="text-2xl font-bold">127</div>
-            <div className="text-sm text-gray-500">Config</div>
+            <div className="text-2xl font-bold">{statusCounts.warning}</div>
+            <div className="text-sm text-gray-500">Warning</div>
           </div>
           <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xl">
             !
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
+        <div
+          className={`bg-white p-4 rounded-lg shadow flex items-center justify-between cursor-pointer hover:bg-gray-50 ${activeStatusFilter === "normal" ? "ring-2 ring-green-500" : ""}`}
+          onClick={() => handleStatusCardClick("normal")}
+        >
           <div>
-            <div className="text-2xl font-bold">1213</div>
-            <div className="text-sm text-gray-500">Policy</div>
+            <div className="text-2xl font-bold">{statusCounts.normal}</div>
+            <div className="text-sm text-gray-500">OK</div>
           </div>
           <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-xl">
             ✓
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
+        <div
+          className={`bg-white p-4 rounded-lg shadow flex items-center justify-between cursor-pointer hover:bg-gray-50 ${activeStatusFilter === "unknown" ? "ring-2 ring-gray-500" : ""}`}
+          onClick={() => handleStatusCardClick("unknown")}
+        >
           <div>
-            <div className="text-2xl font-bold">23</div>
-            <div className="text-sm text-gray-500">Updates</div>
+            <div className="text-2xl font-bold">{statusCounts.unknown}</div>
+            <div className="text-sm text-gray-500">Unknown</div>
           </div>
           <div className="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center text-white text-xl">
             ?
           </div>
         </div>
       </div>
+
+      {activeStatusFilter && (
+        <div className="mb-4">
+          <Button variant="outline" size="sm" onClick={() => handleStatusCardClick(activeStatusFilter)}>
+            <X className="h-4 w-4 mr-2" />
+            Clear {activeStatusFilter.charAt(0).toUpperCase() + activeStatusFilter.slice(1)} Filter
+          </Button>
+        </div>
+      )}
 
       <div className="flex gap-2 mb-4">
         <div className="relative flex-1">
@@ -422,9 +603,9 @@ export function Dashboard() {
       </div>
 
       <div className="mb-4">
-        <Button onClick={handleDownloadCSV}>
+        <Button onClick={handleDownloadCSV} disabled={isExporting}>
           <Download className="h-4 w-4 mr-2" />
-          Download CSV
+          {isExporting ? "Exporting..." : "Download CSV"}
         </Button>
       </div>
 

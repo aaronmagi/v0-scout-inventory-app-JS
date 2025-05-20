@@ -27,12 +27,6 @@ export default function RootLayout({
             <div className="min-h-screen flex flex-col">
               <header className="bg-[#0066cc] text-white px-5 py-3 flex justify-between items-center z-10">
                 <div className="text-lg font-bold">Scout Inventory Management</div>
-                <div className="flex gap-4">
-                  <div className="w-6 h-6 bg-white/20 rounded"></div>
-                  <div className="w-6 h-6 bg-white/20 rounded"></div>
-                  <div className="w-6 h-6 bg-white/20 rounded"></div>
-                  <div className="w-6 h-6 bg-white/20 rounded"></div>
-                </div>
               </header>
               <div className="flex flex-1 overflow-hidden">{children}</div>
             </div>

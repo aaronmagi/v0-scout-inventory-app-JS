@@ -9,7 +9,6 @@ export interface Server {
   status: "critical" | "warning" | "normal" | "unknown"
   generation?: string
   managementController?: string
-  // Additional properties for filters
   lifecycleStatus?: string
   warrantyEndDate?: string
   manufactureDate?: string
@@ -29,6 +28,81 @@ export interface Server {
   lockdownMode?: boolean
   accountName?: string
   accountEnabled?: boolean
+
+  // Detailed information categories
+  summary?: ServerSummary
+  processors?: ProcessorInfo[]
+  memory?: MemoryInfo[]
+  storage?: StorageInfo[]
+  network?: NetworkInfo[]
+  power?: PowerInfo[]
+  system?: SystemInfo
+  [key: string]: any
+}
+
+export interface ServerSummary {
+  serialNumber: string
+  manufacturer: string
+  location: string
+  rackPosition: string
+  assetTag?: string
+  biosVersion?: string
+  lastUpdated?: string
+}
+
+export interface ProcessorInfo {
+  id: string
+  model: string
+  manufacturer: string
+  cores: number
+  threads: number
+  speed: string
+  status: string
+}
+
+export interface MemoryInfo {
+  id: string
+  location: string
+  capacity: string
+  type: string
+  speed: string
+  status: string
+}
+
+export interface StorageInfo {
+  id: string
+  type: string
+  model: string
+  capacity: string
+  interface: string
+  status: string
+}
+
+export interface NetworkInfo {
+  id: string
+  macAddress: string
+  type: string
+  speed: string
+  status: string
+  ipAddresses?: string[]
+}
+
+export interface PowerInfo {
+  id: string
+  type: string
+  capacity: string
+  status: string
+  efficiency?: string
+}
+
+export interface SystemInfo {
+  operatingSystem?: string
+  osVersion?: string
+  kernelVersion?: string
+  lastBootTime?: string
+  uptime?: string
+  loadAverage?: string
+  users?: number
 }
 
 // Update the generateAdditionalServers function to include filter-related properties
@@ -172,6 +246,8 @@ export const serverData: Server[] = [
     certificateIsSelfSigned: false,
     certificateIssuer: "Approved CA",
     lockdownMode: true,
+    accountName: undefined,
+    accountEnabled: undefined,
   },
   {
     id: "2",
@@ -199,6 +275,8 @@ export const serverData: Server[] = [
     certificateIsSelfSigned: false,
     certificateIssuer: "Approved CA",
     lockdownMode: true,
+    accountName: undefined,
+    accountEnabled: undefined,
   },
   {
     id: "3",
@@ -226,6 +304,8 @@ export const serverData: Server[] = [
     certificateIsSelfSigned: true,
     certificateIssuer: "Self-Signed",
     lockdownMode: false,
+    accountName: undefined,
+    accountEnabled: undefined,
   },
   {
     id: "4",
@@ -253,6 +333,8 @@ export const serverData: Server[] = [
     certificateIsSelfSigned: false,
     certificateIssuer: "Approved CA",
     lockdownMode: true,
+    accountName: undefined,
+    accountEnabled: undefined,
   },
   {
     id: "5",
@@ -280,6 +362,8 @@ export const serverData: Server[] = [
     certificateIsSelfSigned: false,
     certificateIssuer: "Approved CA",
     lockdownMode: false,
+    accountName: undefined,
+    accountEnabled: undefined,
   },
   {
     id: "6",
@@ -307,6 +391,8 @@ export const serverData: Server[] = [
     certificateIsSelfSigned: false,
     certificateIssuer: "Approved CA",
     lockdownMode: true,
+    accountName: undefined,
+    accountEnabled: undefined,
   },
   {
     id: "7",
@@ -334,6 +420,8 @@ export const serverData: Server[] = [
     certificateIsSelfSigned: false,
     certificateIssuer: "Approved CA",
     lockdownMode: true,
+    accountName: undefined,
+    accountEnabled: undefined,
   },
   // HPE Servers
   {
@@ -799,6 +887,103 @@ export const serverData: Server[] = [
   // Add additional servers to fill 5 pages (10 servers per page = 50 servers total)
   ...generateAdditionalServers(30), // Generate 30 more servers to reach 52 total (more than 5 pages)
 ]
+
+// Add detailed information to the mock data
+serverData.forEach((server) => {
+  // Add mock detailed information for each server
+  server.summary = {
+    serialNumber: `SN-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+    manufacturer: ["Dell", "HP", "Lenovo", "Cisco", "SuperMicro"][Math.floor(Math.random() * 5)],
+    location: `Datacenter ${Math.floor(Math.random() * 5) + 1}`,
+    rackPosition: `Rack ${Math.floor(Math.random() * 20) + 1}, U${Math.floor(Math.random() * 40) + 1}`,
+    assetTag: `ASSET-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+    biosVersion: `${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 100)}`,
+    lastUpdated: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString(),
+  }
+
+  // Add 1-4 processors
+  const processorCount = Math.floor(Math.random() * 4) + 1
+  server.processors = Array.from({ length: processorCount }, (_, i) => ({
+    id: `CPU-${i}`,
+    model: ["Intel Xeon Gold", "AMD EPYC", "Intel Xeon Silver", "Intel Xeon Platinum"][Math.floor(Math.random() * 4)],
+    manufacturer: ["Intel", "AMD"][Math.floor(Math.random() * 2)],
+    cores: [8, 16, 24, 32, 64][Math.floor(Math.random() * 5)],
+    threads: [16, 32, 48, 64, 128][Math.floor(Math.random() * 5)],
+    speed: `${Math.floor(Math.random() * 10) + 2}.${Math.floor(Math.random() * 10)}GHz`,
+    status: ["OK", "Warning", "Critical", "Unknown"][Math.floor(Math.random() * 4)],
+  }))
+
+  // Add 2-16 memory modules
+  const memoryCount = Math.floor(Math.random() * 14) + 2
+  server.memory = Array.from({ length: memoryCount }, (_, i) => ({
+    id: `DIMM-${i}`,
+    location: `DIMM ${String.fromCharCode(65 + i)}`,
+    capacity: `${[8, 16, 32, 64, 128][Math.floor(Math.random() * 5)]}GB`,
+    type: ["DDR4", "DDR5"][Math.floor(Math.random() * 2)],
+    speed: `${[2400, 2666, 3200, 4800, 5600][Math.floor(Math.random() * 5)]}MHz`,
+    status: ["OK", "Warning", "Critical", "Unknown"][Math.floor(Math.random() * 4)],
+  }))
+
+  // Add 1-8 storage devices
+  const storageCount = Math.floor(Math.random() * 8) + 1
+  server.storage = Array.from({ length: storageCount }, (_, i) => ({
+    id: `DISK-${i}`,
+    type: ["SSD", "HDD", "NVMe"][Math.floor(Math.random() * 3)],
+    model: ["Samsung", "Intel", "Seagate", "WD", "Micron"][Math.floor(Math.random() * 5)],
+    capacity: `${[240, 480, 960, 1920, 3840, 7680][Math.floor(Math.random() * 6)]}GB`,
+    interface: ["SATA", "SAS", "PCIe"][Math.floor(Math.random() * 3)],
+    status: ["OK", "Warning", "Critical", "Unknown"][Math.floor(Math.random() * 4)],
+  }))
+
+  // Add 1-4 network interfaces
+  const networkCount = Math.floor(Math.random() * 4) + 1
+  server.network = Array.from({ length: networkCount }, (_, i) => ({
+    id: `NIC-${i}`,
+    macAddress: Array.from({ length: 6 }, () =>
+      Math.floor(Math.random() * 256)
+        .toString(16)
+        .padStart(2, "0"),
+    ).join(":"),
+    type: ["1GbE", "10GbE", "25GbE", "40GbE", "100GbE"][Math.floor(Math.random() * 5)],
+    speed: ["1 Gbps", "10 Gbps", "25 Gbps", "40 Gbps", "100 Gbps"][Math.floor(Math.random() * 5)],
+    status: ["OK", "Warning", "Critical", "Unknown"][Math.floor(Math.random() * 4)],
+    ipAddresses: Array.from(
+      { length: Math.floor(Math.random() * 3) + 1 },
+      () =>
+        `${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`,
+    ),
+  }))
+
+  // Add 1-2 power supplies
+  const powerCount = Math.floor(Math.random() * 2) + 1
+  server.power = Array.from({ length: powerCount }, (_, i) => ({
+    id: `PSU-${i}`,
+    type: ["AC", "DC"][Math.floor(Math.random() * 2)],
+    capacity: `${[750, 1000, 1200, 1500, 2000][Math.floor(Math.random() * 5)]}W`,
+    status: ["OK", "Warning", "Critical", "Unknown"][Math.floor(Math.random() * 4)],
+    efficiency: ["80 PLUS", "80 PLUS Bronze", "80 PLUS Silver", "80 PLUS Gold", "80 PLUS Platinum", "80 PLUS Titanium"][
+      Math.floor(Math.random() * 6)
+    ],
+  }))
+
+  // Add system information
+  server.system = {
+    operatingSystem: [
+      "Windows Server 2019",
+      "Windows Server 2022",
+      "Ubuntu 20.04 LTS",
+      "Ubuntu 22.04 LTS",
+      "RHEL 8",
+      "RHEL 9",
+    ][Math.floor(Math.random() * 6)],
+    osVersion: `${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 100)}`,
+    kernelVersion: `${Math.floor(Math.random() * 5)}.${Math.floor(Math.random() * 20)}.${Math.floor(Math.random() * 100)}`,
+    lastBootTime: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString(),
+    uptime: `${Math.floor(Math.random() * 30)} days, ${Math.floor(Math.random() * 24)} hours`,
+    loadAverage: `${(Math.random() * 2).toFixed(2)}, ${(Math.random() * 2).toFixed(2)}, ${(Math.random() * 2).toFixed(2)}`,
+    users: Math.floor(Math.random() * 10),
+  }
+})
 
 export function getServerById(id: string): Server | undefined {
   return serverData.find((server) => server.id === id)

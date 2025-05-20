@@ -1,8 +1,10 @@
 "use client"
-import Link from "next/link"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, Maximize } from "lucide-react"
+import { Download, ArrowLeft } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
+import { useRouter } from "next/navigation"
+import { serversToCSV, downloadCSV } from "@/lib/csv-utils"
 import { getServerById } from "@/lib/data"
 
 interface ServerDetailProps {
@@ -10,573 +12,144 @@ interface ServerDetailProps {
 }
 
 export function ServerDetail({ serverId }: ServerDetailProps) {
-  const server = getServerById(serverId)
+  const { toast } = useToast()
+  const router = useRouter()
+  const [server, setServer] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Fetch server details
+    const serverData = getServerById(serverId)
+    if (serverData) {
+      setServer(serverData)
+    }
+    setLoading(false)
+  }, [serverId])
+
+  const handleDownloadServerCSV = () => {
+    try {
+      if (!server) return
+
+      toast({
+        title: "Preparing CSV export",
+        description: "Generating server details export...",
+      })
+
+      // Generate CSV content for this single server
+      const csvContent = serversToCSV([server])
+
+      // Generate filename with server name and current date
+      const date = new Date().toISOString().split("T")[0]
+      const filename = `server-${server.name.replace(/\s+/g, "-").toLowerCase()}-${date}.csv`
+
+      // Trigger download
+      downloadCSV(csvContent, filename)
+
+      toast({
+        title: "CSV Export Complete",
+        description: "Server details exported successfully.",
+      })
+    } catch (error) {
+      console.error("CSV export error:", error)
+      toast({
+        title: "Export Failed",
+        description: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        variant: "destructive",
+      })
+    }
+  }
+
+  if (loading) {
+    return <div>Loading server details...</div>
+  }
 
   if (!server) {
-    return (
-      <div className="flex-1 p-4">
-        <div className="flex items-center mb-4">
-          <Link href="/" className="text-blue-600 hover:underline flex items-center">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to All Servers
-          </Link>
-        </div>
-        <div className="bg-white p-8 rounded-lg shadow text-center">
-          <h2 className="text-2xl font-bold mb-4">Server Not Found</h2>
-          <p>The server with ID {serverId} could not be found.</p>
-        </div>
-      </div>
-    )
+    return <div>Server not found</div>
   }
 
   return (
-    <main className="flex-1 p-4 overflow-auto">
-      <div className="flex items-center mb-4">
-        <Link href="/" className="text-blue-600 hover:underline flex items-center">
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to All Servers
-        </Link>
-        <span className="mx-2">&gt;</span>
-        <span>{server.name}</span>
-      </div>
-
+    <div>
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">System Information - {server.name}</h1>
-        <Button>
-          <Maximize className="h-4 w-4 mr-2" />
-          Zoom
+        <div className="flex items-center">
+          <Button variant="outline" size="sm" onClick={() => router.push("/")} className="mr-2">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <h1 className="text-2xl font-bold">{server.name}</h1>
+        </div>
+        <Button onClick={handleDownloadServerCSV} variant="outline" size="sm">
+          <Download className="mr-2 h-4 w-4" />
+          Export CSV
         </Button>
       </div>
 
-      <Tabs defaultValue="summary" className="w-full">
-        <TabsList className="w-full justify-start bg-gray-100 p-0 h-auto">
-          <TabsTrigger
-            value="summary"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            Summary
-          </TabsTrigger>
-          <TabsTrigger
-            value="processors"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            Processors
-          </TabsTrigger>
-          <TabsTrigger
-            value="memory"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            Memory
-          </TabsTrigger>
-          <TabsTrigger
-            value="storage"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            Storage
-          </TabsTrigger>
-          <TabsTrigger
-            value="network"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            Network
-          </TabsTrigger>
-          <TabsTrigger
-            value="power"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            Power
-          </TabsTrigger>
-          <TabsTrigger
-            value="system-info"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            System Info
-          </TabsTrigger>
-        </TabsList>
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4">Server Details</h2>
 
-        <div className="bg-white p-6 rounded-lg shadow mt-[-1px]">
-          <TabsContent value="summary">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">System Overview</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">System Name</div>
-                  <div>{server.name}</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Model</div>
-                  <div>{server.model}</div>
-                </div>
-
-                {server.generation && (
-                  <div className="flex border-b pb-3">
-                    <div className="w-48 text-gray-700">Generation</div>
-                    <div>{server.generation}</div>
-                  </div>
-                )}
-
-                {server.managementController && (
-                  <div className="flex border-b pb-3">
-                    <div className="w-48 text-gray-700">Management Controller</div>
-                    <div>{server.managementController}</div>
-                  </div>
-                )}
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Service Tag</div>
-                  <div>{server.identifier}</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">System Status</div>
-                  <div className="flex items-center">
-                    {server.status === "normal" && (
-                      <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    )}
-                    {server.status === "warning" && (
-                      <span className="inline-block w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
-                    )}
-                    {server.status === "critical" && (
-                      <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-2"></span>
-                    )}
-                    {server.status === "normal" ? "OK" : server.status.charAt(0).toUpperCase() + server.status.slice(1)}
-                  </div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Managed State</div>
-                  <div>{server.managedState}</div>
-                </div>
-              </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <h3 className="font-medium text-gray-500">IP Address</h3>
+            <p>{server.ipAddress}</p>
+          </div>
+          <div>
+            <h3 className="font-medium text-gray-500">Identifier</h3>
+            <p>{server.identifier}</p>
+          </div>
+          <div>
+            <h3 className="font-medium text-gray-500">Model</h3>
+            <p>{server.model}</p>
+          </div>
+          <div>
+            <h3 className="font-medium text-gray-500">Type</h3>
+            <p>{server.type}</p>
+          </div>
+          <div>
+            <h3 className="font-medium text-gray-500">Status</h3>
+            <p className="flex items-center">
+              <span
+                className={`inline-block w-3 h-3 rounded-full mr-2 ${
+                  server.status === "critical"
+                    ? "bg-red-500"
+                    : server.status === "warning"
+                      ? "bg-yellow-500"
+                      : server.status === "normal"
+                        ? "bg-green-500"
+                        : "bg-gray-500"
+                }`}
+              ></span>
+              {server.status.charAt(0).toUpperCase() + server.status.slice(1)}
+            </p>
+          </div>
+          <div>
+            <h3 className="font-medium text-gray-500">Managed State</h3>
+            <p>{server.managedState}</p>
+          </div>
+          {server.generation && (
+            <div>
+              <h3 className="font-medium text-gray-500">Generation</h3>
+              <p>{server.generation}</p>
             </div>
-          </TabsContent>
-
-          <TabsContent value="processors">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Processor 1</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Processor Name</div>
-                  <div>Intel(R) Xeon(R) Gold 6454S</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Processor Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Processor Speed</div>
-                  <div>2200 MHz</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Core Count</div>
-                  <div>32</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Thread Count</div>
-                  <div>64</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Execution Technology</div>
-                  <div>32/32 cores; 64 threads</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Memory Technology</div>
-                  <div>64-bit Capable</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Internal L1 cache</div>
-                  <div>2560 KB</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Internal L2 cache</div>
-                  <div>65536 KB</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Internal L3 cache</div>
-                  <div>61440 KB</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Manufacturer</div>
-                  <div>Intel Corporation</div>
-                </div>
-              </div>
+          )}
+          {server.managementController && (
+            <div>
+              <h3 className="font-medium text-gray-500">Management Controller</h3>
+              <p>{server.managementController}</p>
             </div>
-          </TabsContent>
-
-          <TabsContent value="memory">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Memory Module 1</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Capacity</div>
-                  <div>32768 MiB</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Type</div>
-                  <div>DDR5</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Speed</div>
-                  <div>4800 MHz</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Manufacturer</div>
-                  <div>Samsung</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
+          )}
+          {server.lifecycleStatus && (
+            <div>
+              <h3 className="font-medium text-gray-500">Lifecycle Status</h3>
+              <p>{server.lifecycleStatus}</p>
             </div>
-
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Memory Module 2</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Capacity</div>
-                  <div>32768 MiB</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Type</div>
-                  <div>DDR5</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Speed</div>
-                  <div>4800 MHz</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Manufacturer</div>
-                  <div>Samsung</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
+          )}
+          {server.warrantyEndDate && (
+            <div>
+              <h3 className="font-medium text-gray-500">Warranty End Date</h3>
+              <p>{server.warrantyEndDate}</p>
             </div>
-          </TabsContent>
-
-          <TabsContent value="storage">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Storage Device 1</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Device Name</div>
-                  <div>Disk0</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Model</div>
-                  <div>SAMSUNG PM9A3 1.92TB NVMe</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Type</div>
-                  <div>SSD</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Capacity</div>
-                  <div>1920000000000 Bytes (1.92 TB)</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Firmware Version</div>
-                  <div>GDC5602Q</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Storage Device 2</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Device Name</div>
-                  <div>Disk1</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Model</div>
-                  <div>SAMSUNG PM9A3 1.92TB NVMe</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Type</div>
-                  <div>SSD</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Capacity</div>
-                  <div>1920000000000 Bytes (1.92 TB)</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Firmware Version</div>
-                  <div>GDC5602Q</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="network">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Network Interface 1</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Interface Name</div>
-                  <div>eth0</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">MAC Address</div>
-                  <div>AA:BB:CC:DD:EE:FF</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Speed</div>
-                  <div>10000 Mbps</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Network Interface 2</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Interface Name</div>
-                  <div>eth1</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">MAC Address</div>
-                  <div>AA:BB:CC:DD:EE:00</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Speed</div>
-                  <div>10000 Mbps</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="power">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Power Supply 1</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">PSU Name</div>
-                  <div>PSU1</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Serial Number</div>
-                  <div>CN7792A63100075</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Firmware Version</div>
-                  <div>1.00.40</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Power Supply 2</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">PSU Name</div>
-                  <div>PSU2</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Serial Number</div>
-                  <div>CN7792A63100076</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Firmware Version</div>
-                  <div>1.00.40</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="system-info">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">System Information</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Serial Number (Service Tag)</div>
-                  <div>{server.identifier}</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Hostname (Name)</div>
-                  <div>{server.name}</div>
-                </div>
-
-                {server.generation && (
-                  <div className="flex border-b pb-3">
-                    <div className="w-48 text-gray-700">Generation</div>
-                    <div>{server.generation}</div>
-                  </div>
-                )}
-
-                {server.managementController && (
-                  <div className="flex border-b pb-3">
-                    <div className="w-48 text-gray-700">Management Controller</div>
-                    <div>{server.managementController}</div>
-                  </div>
-                )}
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Location</div>
-                  <div>Data Center 1, Rack A12, Position 14</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Purchase Date</div>
-                  <div>2023-01-15</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Shipped Date</div>
-                  <div>2023-01-25</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Warranty Info</div>
-                  <div>ProSupport Plus, expires 2026-01-15</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Model ID</div>
-                  <div>{server.model}</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Lifecycle Stage Status</div>
-                  <div>Production</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Managed by (Server)</div>
-                  <div>OME-Central</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Mapped Application Service</div>
-                  <div>Web Application Cluster</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Managed By Group</div>
-                  <div>Infrastructure Operations</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Most Recent Discovery (Redfish)</div>
-                  <div>2025-05-15 14:32:17</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Most Recent Discovery (ServiceNow)</div>
-                  <div>2025-05-15 12:00:05</div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
+          )}
         </div>
-      </Tabs>
-    </main>
+      </div>
+    </div>
   )
 }
