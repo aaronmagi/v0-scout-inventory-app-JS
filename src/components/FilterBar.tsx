@@ -2,9 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { useStyles2, Input, Select, Button, Modal } from "@grafana/ui"
 import { css } from "@emotion/css"
-import type { GrafanaTheme2, SelectableValue } from "@grafana/data"
 import { InteractiveSearch } from "./InteractiveSearch"
 
 interface FilterBarProps {
@@ -13,12 +11,150 @@ interface FilterBarProps {
   selectedFilter: string
 }
 
+// Custom useStyles2 hook
+const useStyles2 = (fn: any) =>
+  fn({
+    colors: {
+      primary: { text: "#3b82f6" },
+      text: { secondary: "#6b7280" },
+      background: { primary: "#ffffff", secondary: "#f9fafb" },
+      border: { weak: "#e5e7eb" },
+    },
+  })
+
+// Custom Input component
+const Input = ({
+  prefix,
+  placeholder,
+  value,
+  onChange,
+  className,
+}: {
+  prefix?: React.ReactNode
+  placeholder?: string
+  value: string
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  className?: string
+}) => (
+  <div className="relative flex-1">
+    {prefix && <div className="absolute left-3 top-1/2 transform -translate-y-1/2">{prefix}</div>}
+    <input
+      type="text"
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      className={`w-full p-2 border rounded ${prefix ? "pl-8" : ""} ${className}`}
+    />
+  </div>
+)
+
+// Custom Button component
+const Button = ({
+  children,
+  onClick,
+  variant = "primary",
+  href,
+  disabled,
+  className,
+}: {
+  children: React.ReactNode
+  onClick?: () => void
+  variant?: string
+  href?: string
+  disabled?: boolean
+  className?: string
+}) => {
+  const style = {
+    padding: "8px 16px",
+    backgroundColor: variant === "primary" ? "#3b82f6" : "transparent",
+    color: variant === "primary" ? "white" : "#3b82f6",
+    border: variant === "primary" ? "none" : "1px solid #3b82f6",
+    borderRadius: "4px",
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.7 : 1,
+    textDecoration: "none",
+    display: "inline-block",
+  }
+
+  return href ? (
+    <a href={href} style={style as React.CSSProperties} className={className}>
+      {children}
+    </a>
+  ) : (
+    <button onClick={onClick} disabled={disabled} style={style} className={className}>
+      {children}
+    </button>
+  )
+}
+
+// Custom Select component
+const Select = ({
+  options,
+  value,
+  onChange,
+  placeholder,
+  className,
+}: {
+  options: Array<{ label: string; value: string }>
+  value: string
+  onChange: (value: { value: string }) => void
+  placeholder?: string
+  className?: string
+}) => (
+  <select
+    value={value}
+    onChange={(e) => onChange({ value: e.target.value })}
+    className={`p-2 border rounded ${className}`}
+  >
+    {placeholder && <option value="">{placeholder}</option>}
+    {options.map((option) => (
+      <option key={option.value} value={option.value}>
+        {option.label}
+      </option>
+    ))}
+  </select>
+)
+
+// Custom Modal component
+const Modal = ({
+  title,
+  isOpen,
+  onDismiss,
+  children,
+  className,
+}: {
+  title: string
+  isOpen: boolean
+  onDismiss: () => void
+  children: React.ReactNode
+  className?: string
+}) => {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onDismiss}>
+      <div
+        className={`bg-white rounded-lg p-4 max-w-4xl max-h-[90vh] overflow-auto ${className}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">{title}</h2>
+          <button onClick={onDismiss} className="text-gray-500 hover:text-gray-700">
+            ×
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export function FilterBar({ onSearch, onFilterChange, selectedFilter }: FilterBarProps) {
   const styles = useStyles2(getStyles)
   const [searchQuery, setSearchQuery] = useState("")
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false)
 
-  const filterOptions: Array<SelectableValue<string>> = [
+  const filterOptions = [
     { label: "All Servers", value: "all-servers" },
     { label: "End of Life", value: "end-of-life" },
     { label: "End of Warranty", value: "end-of-warranty" },
@@ -35,7 +171,7 @@ export function FilterBar({ onSearch, onFilterChange, selectedFilter }: FilterBa
     onSearch(e.target.value)
   }
 
-  const handleFilterChange = (value: SelectableValue<string>) => {
+  const handleFilterChange = (value: { value: string }) => {
     if (value.value) {
       onFilterChange(value.value)
     }
@@ -50,7 +186,7 @@ export function FilterBar({ onSearch, onFilterChange, selectedFilter }: FilterBa
     <div className={styles.container}>
       <div className={styles.searchContainer}>
         <Input
-          prefix={<i className="fa fa-search" />}
+          prefix={<span>🔍</span>}
           placeholder="Search for servers by name, IP, model..."
           value={searchQuery}
           onChange={handleSearchChange}
@@ -97,7 +233,7 @@ export function FilterBar({ onSearch, onFilterChange, selectedFilter }: FilterBa
   )
 }
 
-const getStyles = (theme: GrafanaTheme2) => {
+const getStyles = (theme: any) => {
   return {
     container: css`
       display: flex;

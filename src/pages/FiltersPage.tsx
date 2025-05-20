@@ -1,11 +1,142 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { getBackendSrv } from "@grafana/runtime"
-import { useStyles2, LoadingPlaceholder, Button, Input, TextArea, Select } from "@grafana/ui"
 import { css } from "@emotion/css"
 import type { GrafanaTheme2 } from "@grafana/data"
 import { API_BASE_URL } from "../constants"
+
+// Custom components instead of Grafana UI
+const LoadingPlaceholder = ({ text }: { text: string }) => (
+  <div style={{ display: "flex", justifyContent: "center", padding: "20px" }}>{text || "Loading..."}</div>
+)
+
+const Button = ({
+  children,
+  onClick,
+  variant = "primary",
+  size = "md",
+  icon,
+}: {
+  children: React.ReactNode
+  onClick?: () => void
+  variant?: string
+  size?: string
+  icon?: string
+}) => (
+  <button
+    onClick={onClick}
+    style={{
+      padding: size === "sm" ? "4px 8px" : "8px 16px",
+      backgroundColor: variant === "primary" ? "#3b82f6" : "transparent",
+      color: variant === "primary" ? "white" : "#3b82f6",
+      border: variant === "primary" ? "none" : "1px solid #3b82f6",
+      borderRadius: "4px",
+      cursor: "pointer",
+    }}
+  >
+    {icon && <span style={{ marginRight: "4px" }}>⚙️</span>}
+    {children}
+  </button>
+)
+
+const Input = ({
+  value,
+  onChange,
+  placeholder,
+  width,
+}: {
+  value: string
+  onChange: (e: any) => void
+  placeholder?: string
+  width?: number
+}) => (
+  <input
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    style={{
+      padding: "8px 12px",
+      border: "1px solid #e5e7eb",
+      borderRadius: "4px",
+      width: width ? `${width}px` : "100%",
+    }}
+  />
+)
+
+const TextArea = ({
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+  className,
+}: {
+  value: string
+  onChange: (e: any) => void
+  placeholder?: string
+  rows?: number
+  className?: string
+}) => (
+  <textarea
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    rows={rows}
+    style={{
+      padding: "8px 12px",
+      border: "1px solid #e5e7eb",
+      borderRadius: "4px",
+      width: "100%",
+      fontFamily: className?.includes("monospace") ? "monospace" : "inherit",
+    }}
+  />
+)
+
+const Select = ({
+  value,
+  onChange,
+  options = [],
+  placeholder,
+  width,
+}: {
+  value: string
+  onChange: (v: { value: string }) => void
+  options?: Array<{ label: string; value: string }>
+  placeholder?: string
+  width?: number
+}) => (
+  <select
+    value={value}
+    onChange={(e) => onChange({ value: e.target.value })}
+    style={{
+      padding: "8px 12px",
+      border: "1px solid #e5e7eb",
+      borderRadius: "4px",
+      width: width ? `${width}px` : "100%",
+    }}
+  >
+    {placeholder && <option value="">{placeholder}</option>}
+    {options.map((option) => (
+      <option key={option.value} value={option.value}>
+        {option.label}
+      </option>
+    ))}
+  </select>
+)
+
+// Custom useStyles2 hook
+const useStyles2 = (fn: any) =>
+  fn({
+    colors: {
+      primary: { text: "#3b82f6" },
+      text: { secondary: "#6b7280" },
+      background: { primary: "#ffffff", secondary: "#f9fafb" },
+      border: { weak: "#e5e7eb" },
+    },
+    shadows: { z1: "0 1px 3px rgba(0, 0, 0, 0.1)" },
+  })
 
 interface FilterRule {
   id: string
@@ -235,7 +366,7 @@ export function FiltersPage() {
           <label className={styles.label}>Filter Name</label>
           <Input
             value={filterName}
-            onChange={(e) => setFilterName(e.currentTarget.value)}
+            onChange={(e) => setFilterName(e.target.value)}
             placeholder="Enter a name for this filter"
           />
         </div>
@@ -244,7 +375,7 @@ export function FiltersPage() {
           <label className={styles.label}>Description</label>
           <TextArea
             value={filterDescription}
-            onChange={(e) => setFilterDescription(e.currentTarget.value)}
+            onChange={(e) => setFilterDescription(e.target.value)}
             placeholder="Enter a description (optional)"
             rows={2}
           />
@@ -255,7 +386,7 @@ export function FiltersPage() {
             <label className={styles.label}>Redfish Resource</label>
             <Input
               value={redfishResource}
-              onChange={(e) => setRedfishResource(e.currentTarget.value)}
+              onChange={(e) => setRedfishResource(e.target.value)}
               placeholder="Enter Redfish resource path"
             />
           </div>
@@ -334,7 +465,7 @@ export function FiltersPage() {
 
                   <Input
                     value={rule.value}
-                    onChange={(e) => handleRuleChange(rule.id, "value", e.currentTarget.value)}
+                    onChange={(e) => handleRuleChange(rule.id, "value", e.target.value)}
                     placeholder="Value"
                     width={20}
                   />
@@ -348,7 +479,9 @@ export function FiltersPage() {
                     />
                   )}
 
-                  <Button variant="secondary" size="sm" icon="trash-alt" onClick={() => handleRemoveRule(rule.id)} />
+                  <Button variant="secondary" size="sm" onClick={() => handleRemoveRule(rule.id)}>
+                    🗑️
+                  </Button>
                 </div>
               ))}
 
@@ -394,9 +527,9 @@ WHERE
     .join("\n")}
 ORDER BY hostname;`
                 }
-                onChange={(e) => setSqlQuery(e.currentTarget.value)}
+                onChange={(e) => setSqlQuery(e.target.value)}
                 rows={8}
-                className={styles.sqlEditor}
+                className="monospace"
               />
               <div className={styles.sqlButtons}>
                 <Button variant="secondary">Validate Query</Button>

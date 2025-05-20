@@ -1,6 +1,6 @@
-import { useStyles2, Table, Pagination } from "@grafana/ui"
+"use client"
+
 import { css } from "@emotion/css"
-import type { GrafanaTheme2 } from "@grafana/data"
 import type { Server } from "../types"
 
 interface ServerListProps {
@@ -9,6 +9,62 @@ interface ServerListProps {
   totalPages: number
   onPageChange: (page: number) => void
 }
+
+// Custom useStyles2 hook
+const useStyles2 = (fn: any) =>
+  fn({
+    colors: {
+      primary: { text: "#3b82f6" },
+      text: { secondary: "#6b7280" },
+      background: { primary: "#ffffff", secondary: "#f9fafb" },
+      border: { weak: "#e5e7eb" },
+    },
+  })
+
+// Custom Table component
+const Table = ({ data, columns, renderCell }: { data: any[]; columns: any[]; renderCell: any }) => (
+  <table className="w-full">
+    <thead>
+      <tr>
+        {columns.map((column, i) => (
+          <th key={i} className="p-2 text-left">
+            {column.header}
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {data.map((row, i) => (
+        <tr key={i}>
+          {columns.map((column, j) => (
+            <td key={j} className="p-2">
+              {renderCell(row, column)}
+            </td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+)
+
+// Custom Pagination component
+const Pagination = ({
+  currentPage,
+  numberOfPages,
+  onNavigate,
+}: { currentPage: number; numberOfPages: number; onNavigate: (page: number) => void }) => (
+  <div className="flex gap-1">
+    {Array.from({ length: numberOfPages }, (_, i) => i + 1).map((page) => (
+      <button
+        key={page}
+        onClick={() => onNavigate(page)}
+        className={`px-2 py-1 border rounded ${currentPage === page ? "bg-blue-500 text-white" : "bg-white"}`}
+      >
+        {page}
+      </button>
+    ))}
+  </div>
+)
 
 export function ServerList({ servers, currentPage, totalPages, onPageChange }: ServerListProps) {
   const styles = useStyles2(getStyles)
@@ -76,7 +132,7 @@ export function ServerList({ servers, currentPage, totalPages, onPageChange }: S
   )
 }
 
-const getStyles = (theme: GrafanaTheme2) => {
+const getStyles = (theme: any) => {
   return {
     container: css`
       display: flex;
@@ -124,7 +180,7 @@ const getStyles = (theme: GrafanaTheme2) => {
     `,
     pageInfo: css`
       color: ${theme.colors.text.secondary};
-      font-size: ${theme.typography.size.sm};
+      font-size: ${theme.typography?.size.sm};
     `,
   }
 }

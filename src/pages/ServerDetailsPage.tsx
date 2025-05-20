@@ -1,12 +1,58 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { getBackendSrv } from "@grafana/runtime"
-import { useStyles2, LoadingPlaceholder, Button, Icon } from "@grafana/ui"
 import { css } from "@emotion/css"
 import type { GrafanaTheme2 } from "@grafana/data"
 import { API_BASE_URL } from "../constants"
 import type { Server } from "../types"
+
+// Custom components instead of Grafana UI
+const LoadingPlaceholder = ({ text }: { text: string }) => (
+  <div style={{ display: "flex", justifyContent: "center", padding: "20px" }}>{text || "Loading..."}</div>
+)
+
+const Button = ({
+  children,
+  onClick,
+  variant = "primary",
+}: {
+  children: React.ReactNode
+  onClick?: () => void
+  variant?: string
+}) => (
+  <button
+    onClick={onClick}
+    style={{
+      padding: "8px 16px",
+      backgroundColor: variant === "primary" ? "#3b82f6" : "transparent",
+      color: variant === "primary" ? "white" : "#3b82f6",
+      border: variant === "primary" ? "none" : "1px solid #3b82f6",
+      borderRadius: "4px",
+      cursor: "pointer",
+    }}
+  >
+    {children}
+  </button>
+)
+
+const Icon = ({ name }: { name: string }) => (
+  <span style={{ marginRight: "4px" }}>{name === "arrow-left" ? "←" : name === "expand-alt" ? "⤢" : "⚙️"}</span>
+)
+
+// Custom useStyles2 hook
+const useStyles2 = (fn: any) =>
+  fn({
+    colors: {
+      primary: { text: "#3b82f6" },
+      text: { secondary: "#6b7280" },
+      background: { primary: "#ffffff" },
+      border: { weak: "#e5e7eb" },
+    },
+    shadows: { z1: "0 1px 3px rgba(0, 0, 0, 0.1)" },
+  })
 
 export function ServerDetailsPage() {
   const styles = useStyles2(getStyles)
