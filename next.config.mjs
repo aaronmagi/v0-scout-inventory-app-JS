@@ -10,12 +10,12 @@ const nextConfig = {
     unoptimized: true,
   },
   webpack: (config, { isServer }) => {
-    // Add a fallback for the missing modules
+    // Add a fallback for the missing modules using path strings instead of require.resolve
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@grafana/ui': require.resolve('./src/shims/grafana-ui.ts'),
-      './filter.mjs': require.resolve('./src/components/filter.js'),
-      './Cascader/optionMappings.mjs': require.resolve('./src/components/Cascader/optionMappings.js')
+      '@grafana/ui': './src/shims/grafana-ui.ts',
+      './filter.mjs': './src/components/filter.js',
+      './Cascader/optionMappings.mjs': './src/components/Cascader/optionMappings.js'
     };
     
     return config;
