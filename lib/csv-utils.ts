@@ -78,74 +78,71 @@ function escapeCSV(value: string): string {
   return value
 }
 
-/**
- * Converts an array of server objects to CSV format with all nested data
- * @param servers Array of server objects to convert
- * @returns CSV formatted string with headers
- */
+// Function to convert server data to CSV format
 export function serversToCSV(servers: any[]): string {
-  if (!servers || !Array.isArray(servers) || servers.length === 0) {
+  if (!servers || servers.length === 0) {
     return ""
   }
 
-  try {
-    // Flatten each server object
-    const flattenedServers = servers.map((server) => flattenObject(server))
+  // Get all unique keys from all server objects
+  const allKeys = new Set<string>()
+  servers.forEach((server) => {
+    Object.keys(server).forEach((key) => allKeys.add(key))
+  })
 
-    // Get all possible keys from all flattened server objects
-    const allHeaders = new Set<string>()
-    flattenedServers.forEach((server) => {
-      Object.keys(server).forEach((key) => allHeaders.add(key))
+  // Convert Set to Array and sort alphabetically
+  const headers = Array.from(allKeys).sort()
+
+  // Create CSV header row
+  let csv = headers.join(",") + "\n"
+
+  // Add data rows
+  servers.forEach((server) => {
+    const row = headers.map((header) => {
+      const value = server[header]
+
+      // Handle different data types
+      if (value === undefined || value === null) {
+        return ""
+      } else if (typeof value === "string") {
+        // Escape quotes and wrap in quotes if contains comma, quote or newline
+        if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+          return `"${value.replace(/"/g, '""')}"`
+        }
+        return value
+      } else if (typeof value === "boolean") {
+        return value ? "true" : "false"
+      } else if (value instanceof Date) {
+        return value.toISOString()
+      } else {
+        return String(value)
+      }
     })
 
-    // Convert headers to array and sort for consistent output
-    const headers = Array.from(allHeaders).sort()
+    csv += row.join(",") + "\n"
+  })
 
-    // Create CSV header row
-    const headerRow = headers.map(escapeCSV).join(",")
-
-    // Create CSV data rows
-    const rows = flattenedServers.map((server) => {
-      return headers
-        .map((header) => {
-          return escapeCSV(server[header] || "")
-        })
-        .join(",")
-    })
-
-    // Combine header and data rows
-    return `${headerRow}\n${rows.join("\n")}`
-  } catch (error) {
-    console.error("Error generating CSV:", error)
-    return ""
-  }
+  return csv
 }
 
-/**
- * Triggers a download of a CSV file in the browser
- * @param csvContent CSV content as a string
- * @param filename Name of the file to download
- */
+// Function to trigger CSV download in the browser
 export function downloadCSV(csvContent: string, filename: string): void {
-  try {
-    // Create a blob with the CSV content
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+  // Create a blob with the CSV data
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
 
-    // Create a download link
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.setAttribute("href", url)
-    link.setAttribute("download", filename)
-    link.style.visibility = "hidden"
+  // Create a download link
+  const link = document.createElement("a")
 
-    // Add the link to the DOM, click it, and remove it
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+  // Create a URL for the blob
+  const url = URL.createObjectURL(blob)
 
-    // Clean up the URL object
-    URL.revokeObjectURL(url)
-  } catch (error) {
-    console.error("Error downloading CSV:", error)
-  }
+  // Set link properties
+  link.setAttribute("href", url)
+  link.setAttribute("download", filename)
+  link.style.visibility = "hidden"
+
+  // Add to document, click to download, then remove
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }

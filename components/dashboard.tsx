@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -16,18 +17,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Download, RefreshCw, Search, X } from "lucide-react"
+import { Download, RefreshCw, Search, X, AlertTriangle, CheckCircle, HelpCircle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { serverData, filterData } from "@/lib/data"
 import { InteractiveSearch } from "@/components/interactive-search"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { serversToCSV, downloadCSV } from "@/lib/csv-utils"
 
 const ITEMS_PER_PAGE = 10
@@ -47,6 +41,27 @@ type Server = {
   application: string
   last_updated: string
   status: string
+  name?: string
+  ipAddress?: string
+  model?: string
+  identifier?: string
+  generation?: string
+  managementController?: string
+  lifecycleStatus?: string
+  warrantyEndDate?: string
+  manufactureDate?: string
+  powerState?: string
+  bootStatus?: string
+  firmwareVersion?: string
+  firmwareVerificationEnabled?: boolean
+  passwordPolicyMinLength?: number
+  passwordPolicyRequiresLowercase?: boolean
+  passwordPolicyRequiresUppercase?: boolean
+  passwordPolicyRequiresNumbers?: boolean
+  passwordPolicyRequiresSymbols?: boolean
+  lockdownMode?: boolean
+  type?: string
+  managedState?: string
 }
 
 export function Dashboard() {
@@ -61,10 +76,10 @@ export function Dashboard() {
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState(false)
   const [statusCounts, setStatusCounts] = useState({
-    critical: 0,
-    warning: 0,
-    normal: 0,
-    unknown: 0,
+    security: 59,
+    config: 127,
+    policy: 1213,
+    updates: 23,
   })
   const [activeStatusFilter, setActiveStatusFilter] = useState<string | null>(null)
 
@@ -208,11 +223,6 @@ export function Dashboard() {
     }
   }, [selectedFilter, searchQuery, toast, activeStatusFilter])
 
-  useEffect(() => {
-    const counts = calculateStatusCounts(filteredServers)
-    setStatusCounts(counts)
-  }, [filteredServers])
-
   const handleSelectAllServers = (checked: boolean) => {
     if (checked) {
       setSelectedServers(currentServers.map((server) => server.id))
@@ -312,24 +322,6 @@ export function Dashboard() {
     }
   }
 
-  const calculateStatusCounts = (servers: any[]) => {
-    const counts = {
-      critical: 0,
-      warning: 0,
-      normal: 0,
-      unknown: 0,
-    }
-
-    servers.forEach((server) => {
-      if (server.status === "critical") counts.critical++
-      else if (server.status === "warning") counts.warning++
-      else if (server.status === "normal") counts.normal++
-      else counts.unknown++
-    })
-
-    return counts
-  }
-
   // Calculate pagination
   const totalPages = Math.ceil(filteredServers.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
@@ -395,333 +387,252 @@ export function Dashboard() {
     }
   }
 
-  const handleStatusCardClick = (status: string) => {
-    // If already filtered by this status, clear the filter
-    if (activeStatusFilter === status) {
-      setActiveStatusFilter(null)
-    } else {
-      setActiveStatusFilter(status)
-    }
-
-    setCurrentPage(1) // Reset to first page
-
-    // If we're on the all-servers filter, just apply the status filter
-    if (selectedFilter === "all-servers") {
-      let results = serverData
-
-      if (status) {
-        results = results.filter((server) => server.status === status)
-      }
-
-      // Apply search query if present
-      if (searchQuery) {
-        results = results.filter((server) => {
-          const searchLower = searchQuery.toLowerCase()
-          const name = server.name?.toLowerCase() || ""
-          const ipAddress = server.ipAddress?.toLowerCase() || ""
-          const model = server.model?.toLowerCase() || ""
-          const identifier = server.identifier?.toLowerCase() || ""
-          const generation = server.generation?.toLowerCase() || ""
-          const managementController = server.managementController?.toLowerCase() || ""
-
-          return (
-            name.includes(searchLower) ||
-            ipAddress.includes(searchLower) ||
-            model.includes(searchLower) ||
-            identifier.includes(searchLower) ||
-            generation.includes(searchLower) ||
-            managementController.includes(searchLower)
-          )
-        })
-      }
-
-      setFilteredServers(results)
-    }
-  }
-
   return (
-    <main className="flex-1 p-4 overflow-auto">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">{activeFilter ? activeFilter : "All Servers"}</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+    <main className="flex-1 overflow-auto bg-gray-50">
+      <div className="p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">All Servers</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="flex items-center">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            {/* Actions button removed */}
+          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-5">
-        <div
-          className={`bg-white p-4 rounded-lg shadow flex items-center justify-between cursor-pointer hover:bg-gray-50 ${activeStatusFilter === "critical" ? "ring-2 ring-red-500" : ""}`}
-          onClick={() => handleStatusCardClick("critical")}
-        >
-          <div>
-            <div className="text-2xl font-bold">{statusCounts.critical}</div>
-            <div className="text-sm text-gray-500">Critical</div>
-          </div>
-          <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white text-xl">!</div>
-        </div>
-        <div
-          className={`bg-white p-4 rounded-lg shadow flex items-center justify-between cursor-pointer hover:bg-gray-50 ${activeStatusFilter === "warning" ? "ring-2 ring-yellow-500" : ""}`}
-          onClick={() => handleStatusCardClick("warning")}
-        >
-          <div>
-            <div className="text-2xl font-bold">{statusCounts.warning}</div>
-            <div className="text-sm text-gray-500">Warning</div>
-          </div>
-          <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xl">
-            !
-          </div>
-        </div>
-        <div
-          className={`bg-white p-4 rounded-lg shadow flex items-center justify-between cursor-pointer hover:bg-gray-50 ${activeStatusFilter === "normal" ? "ring-2 ring-green-500" : ""}`}
-          onClick={() => handleStatusCardClick("normal")}
-        >
-          <div>
-            <div className="text-2xl font-bold">{statusCounts.normal}</div>
-            <div className="text-sm text-gray-500">OK</div>
-          </div>
-          <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-xl">
-            ✓
-          </div>
-        </div>
-        <div
-          className={`bg-white p-4 rounded-lg shadow flex items-center justify-between cursor-pointer hover:bg-gray-50 ${activeStatusFilter === "unknown" ? "ring-2 ring-gray-500" : ""}`}
-          onClick={() => handleStatusCardClick("unknown")}
-        >
-          <div>
-            <div className="text-2xl font-bold">{statusCounts.unknown}</div>
-            <div className="text-sm text-gray-500">Unknown</div>
-          </div>
-          <div className="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center text-white text-xl">
-            ?
-          </div>
-        </div>
-      </div>
-
-      {activeStatusFilter && (
-        <div className="mb-4">
-          <Button variant="outline" size="sm" onClick={() => handleStatusCardClick(activeStatusFilter)}>
-            <X className="h-4 w-4 mr-2" />
-            Clear {activeStatusFilter.charAt(0).toUpperCase() + activeStatusFilter.slice(1)} Filter
-          </Button>
-        </div>
-      )}
-
-      <div className="flex gap-2 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-          <Input
-            placeholder="Search for servers by name, IP, model..."
-            className="pl-10"
-            value={searchQuery}
-            onChange={handleSearchChange}
-          />
-          {searchQuery && (
-            <button
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              onClick={handleClearSearch}
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
-        <Dialog open={advancedSearchOpen} onOpenChange={setAdvancedSearchOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline">Advanced Search</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[700px]">
-            <DialogHeader>
-              <DialogTitle>Advanced Search</DialogTitle>
-              <DialogDescription>
-                Build complex search queries with multiple conditions and operators.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <InteractiveSearch onSearch={handleAdvancedSearch} />
+        <div className="grid grid-cols-4 gap-4 mb-5">
+          <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
+            <div>
+              <div className="text-2xl font-bold">{statusCounts.security}</div>
+              <div className="text-sm text-gray-500">Security</div>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="mb-4 flex gap-2">
-        <div className="flex-1">
-          <Select value={selectedFilter} onValueChange={setSelectedFilter}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a filter" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all-servers">All Servers</SelectItem>
-              <SelectGroup>
-                <SelectLabel>Basic Filters</SelectLabel>
-                <SelectItem value="end-of-life">End of Life</SelectItem>
-                <SelectItem value="end-of-warranty">End of Warranty</SelectItem>
-                <SelectItem value="manufactured-2022">Manufactured 2022+</SelectItem>
-                <SelectItem value="power-on">Power On</SelectItem>
-                <SelectItem value="boot-failure">Boot Failure</SelectItem>
-              </SelectGroup>
-              <SelectGroup>
-                <SelectLabel>Firmware Management Filters</SelectLabel>
-                <SelectItem value="firmware-version-check">Firmware Version Check</SelectItem>
-                <SelectItem value="firmware-verification-status">Firmware Verification Status</SelectItem>
-                <SelectItem value="firmware-downgrade-policy">Firmware Downgrade Policy</SelectItem>
-              </SelectGroup>
-              <SelectGroup>
-                <SelectLabel>Authentication & Authorization Filters</SelectLabel>
-                <SelectItem value="local-role-configuration">Local Role Configuration</SelectItem>
-                <SelectItem value="password-complexity">Password Complexity</SelectItem>
-              </SelectGroup>
-              <SelectGroup>
-                <SelectLabel>Certificate Management Filters</SelectLabel>
-                <SelectItem value="ssl-certificate-validity">SSL Certificate Validity</SelectItem>
-              </SelectGroup>
-              <SelectGroup>
-                <SelectLabel>Network Security Filters</SelectLabel>
-                <SelectItem value="management-network-isolation">Management Network Isolation</SelectItem>
-              </SelectGroup>
-              <SelectGroup>
-                <SelectLabel>Service Disablement Filters</SelectLabel>
-                <SelectItem value="disabled-services-check">Disabled Services Check</SelectItem>
-              </SelectGroup>
-              <SelectGroup>
-                <SelectLabel>iDRAC Security Standards</SelectLabel>
-                <SelectItem value="system-lockdown-mode">System Lockdown Mode</SelectItem>
-                <SelectItem value="default-root-account-status">Default Root Account Status</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+            <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white text-xl">
+              <AlertTriangle size={24} />
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
+            <div>
+              <div className="text-2xl font-bold">{statusCounts.config}</div>
+              <div className="text-sm text-gray-500">Config</div>
+            </div>
+            <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xl">
+              <AlertTriangle size={24} />
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
+            <div>
+              <div className="text-2xl font-bold">{statusCounts.policy}</div>
+              <div className="text-sm text-gray-500">Policy</div>
+            </div>
+            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-xl">
+              <CheckCircle size={24} />
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
+            <div>
+              <div className="text-2xl font-bold">{statusCounts.updates}</div>
+              <div className="text-sm text-gray-500">Updates</div>
+            </div>
+            <div className="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center text-white text-xl">
+              <HelpCircle size={24} />
+            </div>
+          </div>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => router.push(`/filters/${selectedFilter}`)}
-          disabled={selectedFilter === "all-servers"}
-        >
-          Edit Filter
-        </Button>
-        <Button onClick={() => router.push("/filters/new")}>New Filter</Button>
-      </div>
 
-      <div className="mb-4">
-        <Button onClick={handleDownloadCSV} disabled={isExporting}>
-          <Download className="h-4 w-4 mr-2" />
-          {isExporting ? "Exporting..." : "Download CSV"}
-        </Button>
-      </div>
+        <div className="flex gap-2 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <Input
+              placeholder="Search for servers by name, IP, model..."
+              className="pl-10 bg-white"
+              value={searchQuery}
+              onChange={handleSearchChange}
+            />
+            {searchQuery && (
+              <button
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                onClick={handleClearSearch}
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          <Button variant="outline" onClick={() => setAdvancedSearchOpen(true)}>
+            Advanced Search
+          </Button>
+          <Dialog open={advancedSearchOpen} onOpenChange={setAdvancedSearchOpen}>
+            <DialogContent className="sm:max-w-[700px]">
+              <DialogHeader>
+                <DialogTitle>Advanced Search</DialogTitle>
+                <DialogDescription>
+                  Build complex search queries with multiple conditions and operators.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <InteractiveSearch onSearch={handleAdvancedSearch} />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="p-3 text-left">
-                  <Checkbox
-                    checked={selectedServers.length === currentServers.length && currentServers.length > 0}
-                    onCheckedChange={(checked) => handleSelectAllServers(!!checked)}
-                  />
-                </th>
-                <th className="p-3 text-left">Status</th>
-                <th className="p-3 text-left">IP Address</th>
-                <th className="p-3 text-left">Name</th>
-                <th className="p-3 text-left">Identifier</th>
-                <th className="p-3 text-left">Model</th>
-                <th className="p-3 text-left">Type</th>
-                <th className="p-3 text-left">Managed State</th>
-                <th className="p-3 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentServers.length > 0 ? (
-                currentServers.map((server) => (
-                  <tr key={server.id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="p-3">
-                      <Checkbox
-                        checked={selectedServers.includes(server.id)}
-                        onCheckedChange={(checked) => handleSelectServer(server.id, !!checked)}
-                      />
-                    </td>
-                    <td className="p-3">
-                      {server.status === "critical" && (
-                        <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-1"></span>
-                      )}
-                      {server.status === "warning" && (
-                        <span className="inline-block w-3 h-3 bg-yellow-500 rounded-full mr-1"></span>
-                      )}
-                      {server.status === "normal" && (
-                        <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-1"></span>
-                      )}
-                      {server.status === "unknown" && (
-                        <span className="inline-block w-3 h-3 bg-gray-500 rounded-full mr-1"></span>
-                      )}
-                    </td>
-                    <td className="p-3">{server.ipAddress}</td>
-                    <td className="p-3">
-                      <a href={`/servers/${server.id}`} className="text-blue-600 hover:underline">
-                        {server.name}
-                      </a>
-                    </td>
-                    <td className="p-3">{server.identifier}</td>
-                    <td className="p-3">{server.model}</td>
-                    <td className="p-3">{server.type}</td>
-                    <td className="p-3">{server.managedState}</td>
-                    <td className="p-3">...</td>
-                  </tr>
-                ))
-              ) : (
+        <div className="mb-4 flex gap-2">
+          <div className="flex-1">
+            <Select value={selectedFilter} onValueChange={setSelectedFilter}>
+              <SelectTrigger className="w-full bg-white">
+                <SelectValue placeholder="All Servers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all-servers">All Servers</SelectItem>
+                <SelectGroup>
+                  <SelectLabel>Basic Filters</SelectLabel>
+                  <SelectItem value="end-of-life">End of Life</SelectItem>
+                  <SelectItem value="end-of-warranty">End of Warranty</SelectItem>
+                  <SelectItem value="manufactured-2022">Manufactured 2022+</SelectItem>
+                  <SelectItem value="power-on">Power On</SelectItem>
+                  <SelectItem value="boot-failure">Boot Failure</SelectItem>
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Firmware Management Filters</SelectLabel>
+                  <SelectItem value="firmware-version-check">Firmware Version Check</SelectItem>
+                  <SelectItem value="firmware-verification-status">Firmware Verification Status</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/filters/${selectedFilter}`)}
+            disabled={selectedFilter === "all-servers"}
+          >
+            Edit Filter
+          </Button>
+          <Button onClick={() => router.push("/filters/new")} className="bg-blue-600 hover:bg-blue-700">
+            New Filter
+          </Button>
+        </div>
+
+        <div className="mb-4">
+          <Button variant="outline" onClick={handleDownloadCSV} disabled={isExporting} className="flex items-center">
+            <Download className="h-4 w-4 mr-2" />
+            {isExporting ? "Exporting..." : "Download CSV"}
+          </Button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow overflow-hidden mb-4">
+          <div className="overflow-x-auto max-h-[calc(100vh-20rem)] overflow-y-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={9} className="p-4 text-center text-gray-500">
-                    No servers found matching your search criteria.
-                  </td>
+                  <th className="p-3 text-left">
+                    <Checkbox
+                      checked={selectedServers.length === currentServers.length && currentServers.length > 0}
+                      onCheckedChange={(checked) => handleSelectAllServers(!!checked)}
+                    />
+                  </th>
+                  <th className="p-3 text-left font-medium">Status</th>
+                  <th className="p-3 text-left font-medium">IP Address</th>
+                  <th className="p-3 text-left font-medium">Name</th>
+                  <th className="p-3 text-left font-medium">Identifier</th>
+                  <th className="p-3 text-left font-medium">Model</th>
+                  <th className="p-3 text-left font-medium">Type</th>
+                  <th className="p-3 text-left font-medium">Managed State</th>
+                  <th className="p-3 text-left font-medium">Actions</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex justify-between items-center p-4">
-          <div className="text-sm text-gray-500">
-            Showing {filteredServers.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, filteredServers.length)} of{" "}
-            {filteredServers.length} servers
+              </thead>
+              <tbody>
+                {currentServers.length > 0 ? (
+                  currentServers.map((server) => (
+                    <tr key={server.id} className="border-b border-gray-200 hover:bg-gray-50">
+                      <td className="p-3">
+                        <Checkbox
+                          checked={selectedServers.includes(server.id)}
+                          onCheckedChange={(checked) => handleSelectServer(server.id, !!checked)}
+                        />
+                      </td>
+                      <td className="p-3">
+                        {server.status === "critical" && (
+                          <span className="inline-block w-3 h-3 bg-red-500 rounded-full"></span>
+                        )}
+                        {server.status === "warning" && (
+                          <span className="inline-block w-3 h-3 bg-yellow-500 rounded-full"></span>
+                        )}
+                        {server.status === "normal" && (
+                          <span className="inline-block w-3 h-3 bg-green-500 rounded-full"></span>
+                        )}
+                        {server.status === "unknown" && (
+                          <span className="inline-block w-3 h-3 bg-gray-500 rounded-full"></span>
+                        )}
+                      </td>
+                      <td className="p-3">{server.ipAddress}</td>
+                      <td className="p-3">
+                        <Link href={`/servers/${server.id}`} className="text-blue-600 hover:underline">
+                          {server.name || server.ipAddress}
+                        </Link>
+                      </td>
+                      <td className="p-3">{server.identifier}</td>
+                      <td className="p-3">{server.model}</td>
+                      <td className="p-3">{server.type || "Compute"}</td>
+                      <td className="p-3">{server.managedState || "Managed with Alerts"}</td>
+                      <td className="p-3 text-center">...</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={9} className="p-4 text-center text-gray-500">
+                      No servers found matching your search criteria.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
 
-          <div className="flex gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              «
-            </Button>
+          <div className="flex justify-between items-center p-4 bg-white sticky bottom-0 border-t border-gray-200">
+            <div className="text-sm text-gray-500">
+              Showing {filteredServers.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, filteredServers.length)} of{" "}
+              {filteredServers.length} servers
+            </div>
 
-            {pageNumbers.map((pageNumber, index) =>
-              pageNumber === "ellipsis-start" || pageNumber === "ellipsis-end" ? (
-                <span key={`ellipsis-${index}`} className="flex items-center justify-center h-8 w-8">
-                  ...
-                </span>
-              ) : (
-                <Button
-                  key={`page-${pageNumber}`}
-                  variant="outline"
-                  size="icon"
-                  className={`h-8 w-8 ${currentPage === pageNumber ? "bg-blue-600 text-white" : ""}`}
-                  onClick={() => goToPage(Number(pageNumber))}
-                >
-                  {pageNumber}
-                </Button>
-              ),
-            )}
+            <div className="flex gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                «
+              </Button>
 
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages || totalPages === 0}
-            >
-              »
-            </Button>
+              {pageNumbers.map((pageNumber, index) =>
+                pageNumber === "ellipsis-start" || pageNumber === "ellipsis-end" ? (
+                  <span key={`ellipsis-${index}`} className="flex items-center justify-center h-8 w-8">
+                    ...
+                  </span>
+                ) : (
+                  <Button
+                    key={`page-${pageNumber}`}
+                    variant={currentPage === pageNumber ? "default" : "outline"}
+                    size="icon"
+                    className={`h-8 w-8 ${currentPage === pageNumber ? "bg-blue-600 text-white" : ""}`}
+                    onClick={() => goToPage(Number(pageNumber))}
+                  >
+                    {pageNumber}
+                  </Button>
+                ),
+              )}
+
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages || totalPages === 0}
+              >
+                »
+              </Button>
+            </div>
           </div>
         </div>
       </div>

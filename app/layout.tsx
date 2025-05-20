@@ -4,13 +4,12 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Scout Inventory Management",
-  description: "Server inventory management system",
+  description: "Server inventory management application",
     generator: 'v0.dev'
 }
 
@@ -23,15 +22,14 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <SidebarProvider>
-            <div className="min-h-screen flex flex-col">
-              <header className="bg-[#0066cc] text-white px-5 py-3 flex justify-between items-center z-10">
-                <div className="text-lg font-bold">Scout Inventory Management</div>
-              </header>
-              <div className="flex flex-1 overflow-hidden">{children}</div>
+          <div className="flex flex-col h-screen">
+            <header className="bg-blue-600 text-white p-4 flex items-center justify-between z-50 relative">
+              <h1 className="text-xl font-bold">Scout Inventory Management</h1>
+            </header>
+            <div className="flex flex-1 overflow-hidden">
+              <SidebarProvider>{children}</SidebarProvider>
             </div>
-            <Toaster />
-          </SidebarProvider>
+          </div>
         </ThemeProvider>
       </body>
     </html>
