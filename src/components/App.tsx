@@ -1,59 +1,19 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
-import type { AppRootProps } from "@grafana/data"
-import { getBackendSrv } from "@grafana/runtime"
-import { css } from "@emotion/css"
 import { ServerList } from "./ServerList"
 import { FilterBar } from "./FilterBar"
 import type { Server } from "../types"
-import { API_BASE_URL } from "../constants"
 
 // Custom components instead of Grafana UI
 const LoadingPlaceholder = ({ text }: { text: string }) => (
-  <div style={{ display: "flex", justifyContent: "center", padding: "20px" }}>{text || "Loading..."}</div>
+  <div className="flex justify-center items-center p-5">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+    <span>{text || "Loading..."}</span>
+  </div>
 )
 
-const Button = ({
-  children,
-  onClick,
-  variant = "primary",
-}: {
-  children: React.ReactNode
-  onClick?: () => void
-  variant?: string
-}) => (
-  <button
-    onClick={onClick}
-    style={{
-      padding: "8px 16px",
-      backgroundColor: variant === "primary" ? "#3b82f6" : "transparent",
-      color: variant === "primary" ? "white" : "#3b82f6",
-      border: variant === "primary" ? "none" : "1px solid #3b82f6",
-      borderRadius: "4px",
-      cursor: "pointer",
-    }}
-  >
-    {children}
-  </button>
-)
-
-// Custom useStyles2 hook
-const useStyles2 = (fn: any) =>
-  fn({
-    colors: {
-      primary: { text: "#3b82f6" },
-      text: { secondary: "#6b7280" },
-      background: { primary: "#ffffff" },
-      border: { weak: "#e5e7eb" },
-    },
-    shadows: { z1: "0 1px 3px rgba(0, 0, 0, 0.1)" },
-  })
-
-export function App({ meta, path, query, onNavChanged }: AppRootProps) {
-  const styles = useStyles2(getStyles)
+export function App() {
   const [servers, setServers] = useState<Server[]>([])
   const [filteredServers, setFilteredServers] = useState<Server[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -72,19 +32,22 @@ export function App({ meta, path, query, onNavChanged }: AppRootProps) {
     setError(null)
 
     try {
-      // In a real implementation, this would use the backend API
-      // For now, we'll simulate the API call
-      const response = await getBackendSrv().get(
-        `${API_BASE_URL}/servers?page=${currentPage}&filter=${selectedFilter}&search=${searchQuery}`,
-      )
+      // Fetch from API
+      const response = await fetch(`/api/servers?page=${currentPage}&filter=${selectedFilter}&search=${searchQuery}`)
 
-      setServers(response.data)
-      setFilteredServers(response.data)
-      setTotalPages(response.totalPages || 1)
+      if (!response.ok) {
+        throw new Error(`Error fetching servers: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+
+      setServers(data)
+      setFilteredServers(data)
+      setTotalPages(Math.ceil(data.length / 10) || 1)
       setIsLoading(false)
     } catch (err) {
       console.error("Error fetching servers:", err)
-      setError("Failed to fetch servers. Please try again later.")
+      setError(err instanceof Error ? err.message : "Failed to fetch servers")
       setIsLoading(false)
     }
   }
@@ -100,10 +63,10 @@ export function App({ meta, path, query, onNavChanged }: AppRootProps) {
 
     const filtered = servers.filter(
       (server) =>
-        server.name.toLowerCase().includes(query.toLowerCase()) ||
-        server.ipAddress.toLowerCase().includes(query.toLowerCase()) ||
-        server.model.toLowerCase().includes(query.toLowerCase()) ||
-        server.identifier.toLowerCase().includes(query.toLowerCase()),
+        server.name?.toLowerCase().includes(query.toLowerCase()) ||
+        server.ipAddress?.toLowerCase().includes(query.toLowerCase()) ||
+        server.model?.toLowerCase().includes(query.toLowerCase()) ||
+        server.identifier?.toLowerCase().includes(query.toLowerCase()),
     )
 
     setFilteredServers(filtered)
@@ -118,32 +81,32 @@ export function App({ meta, path, query, onNavChanged }: AppRootProps) {
     setCurrentPage(page)
   }
 
-  const handleExportCSV = () => {
-    // Implementation for CSV export
-    console.log("Exporting CSV...")
-  }
-
   if (isLoading) {
     return <LoadingPlaceholder text="Loading servers..." />
   }
 
   if (error) {
     return (
-      <div className={styles.errorContainer}>
-        <h3>Error</h3>
-        <p>{error}</p>
-        <Button onClick={fetchServers}>Retry</Button>
+      <div className="flex flex-col items-center justify-center h-full gap-4 p-6">
+        <h3 className="text-xl font-bold text-red-600">Error</h3>
+        <p className="text-gray-700">{error}</p>
+        <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={fetchServers}>
+          Retry
+        </button>
       </div>
     )
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1>Server Inventory</h1>
-        <Button variant="primary" onClick={handleExportCSV}>
+    <div className="flex flex-col p-4 h-full">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Server Inventory</h1>
+        <button
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          onClick={() => console.log("Export CSV")}
+        >
           Export CSV
-        </Button>
+        </button>
       </div>
 
       <FilterBar onSearch={handleSearch} onFilterChange={handleFilterChange} selectedFilter={selectedFilter} />
@@ -156,29 +119,4 @@ export function App({ meta, path, query, onNavChanged }: AppRootProps) {
       />
     </div>
   )
-}
-
-const getStyles = () => {
-  return {
-    container: css`
-      display: flex;
-      flex-direction: column;
-      padding: 16px;
-      height: 100%;
-    `,
-    header: css`
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    `,
-    errorContainer: css`
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      gap: 16px;
-    `,
-  }
 }

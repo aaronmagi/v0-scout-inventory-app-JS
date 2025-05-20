@@ -1,9 +1,22 @@
 "use client"
 
 import type React from "react"
+
 import { useState } from "react"
-import { css } from "@emotion/css"
+import { Search, X } from "lucide-react"
 import { InteractiveSearch } from "./InteractiveSearch"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface FilterBarProps {
   onSearch: (query: string) => void
@@ -11,146 +24,7 @@ interface FilterBarProps {
   selectedFilter: string
 }
 
-// Custom useStyles2 hook
-const useStyles2 = (fn: any) =>
-  fn({
-    colors: {
-      primary: { text: "#3b82f6" },
-      text: { secondary: "#6b7280" },
-      background: { primary: "#ffffff", secondary: "#f9fafb" },
-      border: { weak: "#e5e7eb" },
-    },
-  })
-
-// Custom Input component
-const Input = ({
-  prefix,
-  placeholder,
-  value,
-  onChange,
-  className,
-}: {
-  prefix?: React.ReactNode
-  placeholder?: string
-  value: string
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  className?: string
-}) => (
-  <div className="relative flex-1">
-    {prefix && <div className="absolute left-3 top-1/2 transform -translate-y-1/2">{prefix}</div>}
-    <input
-      type="text"
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      className={`w-full p-2 border rounded ${prefix ? "pl-8" : ""} ${className}`}
-    />
-  </div>
-)
-
-// Custom Button component
-const Button = ({
-  children,
-  onClick,
-  variant = "primary",
-  href,
-  disabled,
-  className,
-}: {
-  children: React.ReactNode
-  onClick?: () => void
-  variant?: string
-  href?: string
-  disabled?: boolean
-  className?: string
-}) => {
-  const style = {
-    padding: "8px 16px",
-    backgroundColor: variant === "primary" ? "#3b82f6" : "transparent",
-    color: variant === "primary" ? "white" : "#3b82f6",
-    border: variant === "primary" ? "none" : "1px solid #3b82f6",
-    borderRadius: "4px",
-    cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.7 : 1,
-    textDecoration: "none",
-    display: "inline-block",
-  }
-
-  return href ? (
-    <a href={href} style={style as React.CSSProperties} className={className}>
-      {children}
-    </a>
-  ) : (
-    <button onClick={onClick} disabled={disabled} style={style} className={className}>
-      {children}
-    </button>
-  )
-}
-
-// Custom Select component
-const Select = ({
-  options,
-  value,
-  onChange,
-  placeholder,
-  className,
-}: {
-  options: Array<{ label: string; value: string }>
-  value: string
-  onChange: (value: { value: string }) => void
-  placeholder?: string
-  className?: string
-}) => (
-  <select
-    value={value}
-    onChange={(e) => onChange({ value: e.target.value })}
-    className={`p-2 border rounded ${className}`}
-  >
-    {placeholder && <option value="">{placeholder}</option>}
-    {options.map((option) => (
-      <option key={option.value} value={option.value}>
-        {option.label}
-      </option>
-    ))}
-  </select>
-)
-
-// Custom Modal component
-const Modal = ({
-  title,
-  isOpen,
-  onDismiss,
-  children,
-  className,
-}: {
-  title: string
-  isOpen: boolean
-  onDismiss: () => void
-  children: React.ReactNode
-  className?: string
-}) => {
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onDismiss}>
-      <div
-        className={`bg-white rounded-lg p-4 max-w-4xl max-h-[90vh] overflow-auto ${className}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">{title}</h2>
-          <button onClick={onDismiss} className="text-gray-500 hover:text-gray-700">
-            ×
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  )
-}
-
 export function FilterBar({ onSearch, onFilterChange, selectedFilter }: FilterBarProps) {
-  const styles = useStyles2(getStyles)
   const [searchQuery, setSearchQuery] = useState("")
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false)
 
@@ -171,9 +45,9 @@ export function FilterBar({ onSearch, onFilterChange, selectedFilter }: FilterBa
     onSearch(e.target.value)
   }
 
-  const handleFilterChange = (value: { value: string }) => {
-    if (value.value) {
-      onFilterChange(value.value)
+  const handleFilterChange = (value: string) => {
+    if (value) {
+      onFilterChange(value)
     }
   }
 
@@ -183,84 +57,78 @@ export function FilterBar({ onSearch, onFilterChange, selectedFilter }: FilterBa
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.searchContainer}>
-        <Input
-          prefix={<span>🔍</span>}
-          placeholder="Search for servers by name, IP, model..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          className={styles.searchInput}
-        />
-        <Button variant="secondary" onClick={() => setIsAdvancedSearchOpen(true)} className={styles.advancedButton}>
+    <div className="flex flex-col gap-4 mb-4">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <Input
+            placeholder="Search for servers by name, IP, model..."
+            className="pl-10 bg-white"
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
+          {searchQuery && (
+            <button
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              onClick={() => {
+                setSearchQuery("")
+                onSearch("")
+              }}
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        <Button variant="outline" onClick={() => setIsAdvancedSearchOpen(true)}>
           Advanced Search
         </Button>
       </div>
 
-      <div className={styles.filterContainer}>
-        <Select
-          options={filterOptions}
-          value={selectedFilter}
-          onChange={handleFilterChange}
-          placeholder="Select a filter"
-          className={styles.filterSelect}
-        />
-
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <Select value={selectedFilter} onValueChange={handleFilterChange}>
+            <SelectTrigger className="w-full bg-white">
+              <SelectValue placeholder="All Servers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all-servers">All Servers</SelectItem>
+              <SelectGroup>
+                <SelectLabel>Basic Filters</SelectLabel>
+                <SelectItem value="end-of-life">End of Life</SelectItem>
+                <SelectItem value="end-of-warranty">End of Warranty</SelectItem>
+                <SelectItem value="manufactured-2022">Manufactured 2022+</SelectItem>
+                <SelectItem value="power-on">Power On</SelectItem>
+                <SelectItem value="boot-failure">Boot Failure</SelectItem>
+              </SelectGroup>
+              <SelectGroup>
+                <SelectLabel>Firmware Management Filters</SelectLabel>
+                <SelectItem value="firmware-version-check">Firmware Version Check</SelectItem>
+                <SelectItem value="firmware-verification-status">Firmware Verification Status</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
         <Button
-          variant="secondary"
-          href={`/a/tmobile-scout-inventory/filters?id=${selectedFilter}`}
+          variant="outline"
+          onClick={() => (window.location.href = `/filters/${selectedFilter}`)}
           disabled={selectedFilter === "all-servers"}
         >
           Edit Filter
         </Button>
-
-        <Button variant="primary" href="/a/tmobile-scout-inventory/filters/new">
-          New Filter
-        </Button>
+        <Button onClick={() => (window.location.href = "/filters/new")}>New Filter</Button>
       </div>
 
-      {isAdvancedSearchOpen && (
-        <Modal
-          title="Advanced Search"
-          isOpen={isAdvancedSearchOpen}
-          onDismiss={() => setIsAdvancedSearchOpen(false)}
-          className={styles.modal}
-        >
-          <InteractiveSearch onSearch={handleAdvancedSearch} />
-        </Modal>
-      )}
+      <Dialog open={isAdvancedSearchOpen} onOpenChange={setIsAdvancedSearchOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Advanced Search</DialogTitle>
+            <DialogDescription>Build complex search queries with multiple conditions and operators.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <InteractiveSearch onSearch={handleAdvancedSearch} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
-}
-
-const getStyles = (theme: any) => {
-  return {
-    container: css`
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      margin-bottom: 16px;
-    `,
-    searchContainer: css`
-      display: flex;
-      gap: 8px;
-    `,
-    searchInput: css`
-      flex: 1;
-    `,
-    advancedButton: css`
-      flex-shrink: 0;
-    `,
-    filterContainer: css`
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    `,
-    filterSelect: css`
-      flex: 1;
-    `,
-    modal: css`
-      width: 800px;
-    `,
-  }
 }

@@ -26,7 +26,7 @@ export interface Server {
   certificateIsSelfSigned?: boolean
   certificateIssuer?: string
   lockdownMode?: boolean
-  accountName?: string
+  accountName?: boolean
   accountEnabled?: boolean
   [key: string]: any
 }
