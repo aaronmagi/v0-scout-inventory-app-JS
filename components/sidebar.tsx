@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import Link from "next/link"
 import { useState } from "react"
 import {
@@ -13,7 +15,15 @@ import {
   AlertCircle,
   HardDrive,
   Network,
+  Database,
+  Monitor,
+  Layers,
+  Router,
+  Power,
+  StoreIcon as Storage,
+  BatteryCharging,
 } from "lucide-react"
+import { PhaseTwoModal } from "./phase-two-modal"
 
 export function Sidebar() {
   const [openSections, setOpenSections] = useState({
@@ -22,11 +32,20 @@ export function Sidebar() {
     users: false,
   })
 
+  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedFeature, setSelectedFeature] = useState("")
+
   const toggleSection = (section: string) => {
     setOpenSections((prev) => ({
       ...prev,
       [section]: !prev[section],
     }))
+  }
+
+  const handlePhaseTwo = (featureName: string) => (e: React.MouseEvent) => {
+    e.preventDefault()
+    setSelectedFeature(featureName)
+    setModalOpen(true)
   }
 
   return (
@@ -72,28 +91,83 @@ export function Sidebar() {
                   </Link>
                 </li>
                 <li>
+                  <a
+                    href="#"
+                    onClick={handlePhaseTwo("HCI Appliances")}
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <Database className="h-4 w-4" />
+                    <span>HCI Appliances</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    onClick={handlePhaseTwo("Hypervisor Systems")}
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <Monitor className="h-4 w-4" />
+                    <span>Hypervisor Systems</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    onClick={handlePhaseTwo("Modular Systems")}
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <Layers className="h-4 w-4" />
+                    <span>Modular Systems</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    onClick={handlePhaseTwo("Network Devices")}
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <Router className="h-4 w-4" />
+                    <span>Network Devices</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    onClick={handlePhaseTwo("PDU Devices")}
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <Power className="h-4 w-4" />
+                    <span>PDU Devices</span>
+                  </a>
+                </li>
+                <li>
                   <Link
                     href="/servers/critical"
                     className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
-                    <span>Critical Status</span>
+                    <Server className="h-4 w-4" />
+                    <span>Servers</span>
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/servers/warranty"
+                  <a
+                    href="#"
+                    onClick={handlePhaseTwo("Storage Devices")}
                     className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
-                    <span>Warranty Expiring</span>
-                  </Link>
+                    <Storage className="h-4 w-4" />
+                    <span>Storage Devices</span>
+                  </a>
                 </li>
                 <li>
-                  <Link
-                    href="/servers/groups"
+                  <a
+                    href="#"
+                    onClick={handlePhaseTwo("UPS Devices")}
                     className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
-                    <span>Server Groups</span>
-                  </Link>
+                    <BatteryCharging className="h-4 w-4" />
+                    <span>UPS Devices</span>
+                  </a>
                 </li>
               </ul>
             )}
@@ -101,35 +175,38 @@ export function Sidebar() {
 
           {/* Hardware */}
           <li>
-            <Link
-              href="/hardware"
+            <a
+              href="#"
+              onClick={handlePhaseTwo("Hardware")}
               className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             >
               <HardDrive className="h-5 w-5" />
               <span>Hardware</span>
-            </Link>
+            </a>
           </li>
 
           {/* Network */}
           <li>
-            <Link
-              href="/network"
+            <a
+              href="#"
+              onClick={handlePhaseTwo("Network")}
               className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             >
               <Network className="h-5 w-5" />
               <span>Network</span>
-            </Link>
+            </a>
           </li>
 
           {/* Alerts */}
           <li>
-            <Link
-              href="/alerts"
+            <a
+              href="#"
+              onClick={handlePhaseTwo("Alerts")}
               className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             >
               <AlertCircle className="h-5 w-5" />
               <span>Alerts</span>
-            </Link>
+            </a>
           </li>
 
           {/* Users Section */}
@@ -148,20 +225,22 @@ export function Sidebar() {
             {openSections.users && (
               <ul className="mt-1 ml-6 space-y-1">
                 <li>
-                  <Link
-                    href="/users"
+                  <a
+                    href="#"
+                    onClick={handlePhaseTwo("All Users")}
                     className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
                     <span>All Users</span>
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link
-                    href="/users/roles"
+                  <a
+                    href="#"
+                    onClick={handlePhaseTwo("Roles")}
                     className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
                     <span>Roles</span>
-                  </Link>
+                  </a>
                 </li>
               </ul>
             )}
@@ -169,13 +248,14 @@ export function Sidebar() {
 
           {/* Security */}
           <li>
-            <Link
-              href="/security"
+            <a
+              href="#"
+              onClick={handlePhaseTwo("Security")}
               className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             >
               <Shield className="h-5 w-5" />
               <span>Security</span>
-            </Link>
+            </a>
           </li>
 
           {/* Settings Section */}
@@ -194,28 +274,31 @@ export function Sidebar() {
             {openSections.settings && (
               <ul className="mt-1 ml-6 space-y-1">
                 <li>
-                  <Link
-                    href="/settings/general"
+                  <a
+                    href="#"
+                    onClick={handlePhaseTwo("General Settings")}
                     className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
                     <span>General</span>
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link
-                    href="/settings/api"
+                  <a
+                    href="#"
+                    onClick={handlePhaseTwo("API Settings")}
                     className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
                     <span>API</span>
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link
-                    href="/settings/notifications"
+                  <a
+                    href="#"
+                    onClick={handlePhaseTwo("Notifications Settings")}
                     className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
                     <span>Notifications</span>
-                  </Link>
+                  </a>
                 </li>
               </ul>
             )}
@@ -228,6 +311,8 @@ export function Sidebar() {
           <p>Scout Inventory v1.0.0</p>
         </div>
       </div>
+
+      <PhaseTwoModal isOpen={modalOpen} onClose={() => setModalOpen(false)} featureName={selectedFeature} />
     </div>
   )
 }
