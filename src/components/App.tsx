@@ -10,7 +10,7 @@ import { FilterBar } from "./FilterBar"
 import type { Server } from "../types"
 import { API_BASE_URL } from "../constants"
 
-export function App({ meta, path, query, onNavChanged }: AppRootProps) {
+export function App(_props: AppRootProps) {
   const styles = useStyles2(getStyles)
   const [servers, setServers] = useState<Server[]>([])
   const [filteredServers, setFilteredServers] = useState<Server[]>([])
@@ -23,7 +23,7 @@ export function App({ meta, path, query, onNavChanged }: AppRootProps) {
 
   useEffect(() => {
     fetchServers()
-  }, [currentPage, selectedFilter])
+  }, [currentPage, selectedFilter, searchQuery])
 
   const fetchServers = async () => {
     setIsLoading(true)

@@ -3,163 +3,229 @@
 import Link from "next/link"
 import { useState } from "react"
 import {
-  ChevronDown,
-  ChevronRight,
-  Database,
-  HardDrive,
-  Laptop,
-  Layers,
-  Network,
-  Power,
+  LayoutDashboard,
   Server,
   Settings,
-  Smartphone,
+  ChevronDown,
+  ChevronRight,
+  Users,
+  Shield,
+  AlertCircle,
+  HardDrive,
+  Network,
 } from "lucide-react"
 
 export function CustomSidebar() {
-  const [allDevicesOpen, setAllDevicesOpen] = useState(true)
-  const [systemGroupsOpen, setSystemGroupsOpen] = useState(true)
-  const [customGroupsOpen, setCustomGroupsOpen] = useState(false)
+  const [openSections, setOpenSections] = useState({
+    servers: true,
+    settings: false,
+    users: false,
+  })
+
+  const toggleSection = (section: string) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }))
+  }
 
   return (
-    <div className="w-64 h-full border-r border-gray-200 bg-white">
-      <div className="overflow-y-auto h-full">
-        <div className="py-2">
-          <div
-            className="font-bold py-2.5 px-4 flex justify-between items-center cursor-pointer hover:bg-gray-100"
-            onClick={() => setAllDevicesOpen(!allDevicesOpen)}
-          >
-            <span>ALL DEVICES</span>
-            {allDevicesOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </div>
-          {allDevicesOpen && (
-            <div className="pl-4">
-              <ul className="space-y-1 py-1">
+    <div className="h-full w-64 bg-white border-r border-gray-200 flex flex-col">
+      <div className="p-4 border-b border-gray-200">
+        <h2 className="text-xl font-bold">Scout Inventory</h2>
+      </div>
+
+      <nav className="flex-1 overflow-y-auto p-2">
+        <ul className="space-y-1">
+          {/* Dashboard */}
+          <li>
+            <Link
+              href="/"
+              className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <LayoutDashboard className="h-5 w-5" />
+              <span>Dashboard</span>
+            </Link>
+          </li>
+
+          {/* Servers Section */}
+          <li>
+            <button
+              onClick={() => toggleSection("servers")}
+              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <div className="flex items-center gap-3">
+                <Server className="h-5 w-5" />
+                <span>Servers</span>
+              </div>
+              {openSections.servers ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+
+            {openSections.servers && (
+              <ul className="mt-1 ml-6 space-y-1">
                 <li>
                   <Link
-                    href="/"
-                    className="flex items-center px-4 py-2 text-sm rounded-md hover:bg-gray-100 text-blue-600 font-medium"
+                    href="/servers"
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
-                    <Server className="h-4 w-4 mr-2 text-blue-500" />
                     <span>All Servers</span>
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    href="/servers/critical"
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <span>Critical Status</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/servers/warranty"
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <span>Warranty Expiring</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/servers/groups"
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <span>Server Groups</span>
+                  </Link>
+                </li>
               </ul>
-            </div>
-          )}
-        </div>
+            )}
+          </li>
 
-        <div className="py-2">
-          <div
-            className="font-bold py-2.5 px-4 flex justify-between items-center cursor-pointer hover:bg-gray-100"
-            onClick={() => setSystemGroupsOpen(!systemGroupsOpen)}
-          >
-            <span>SYSTEM GROUPS</span>
-            {systemGroupsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </div>
-          {systemGroupsOpen && (
-            <div className="pl-4">
-              <ul className="space-y-1 py-1">
-                <li>
-                  <Link
-                    href="/hci-appliances"
-                    className="flex items-center px-4 py-2 text-sm rounded-md hover:bg-gray-100"
-                  >
-                    <Layers className="h-4 w-4 mr-2 text-gray-500" />
-                    <span>HCI Appliances</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/hypervisor-systems"
-                    className="flex items-center px-4 py-2 text-sm rounded-md hover:bg-gray-100"
-                  >
-                    <Laptop className="h-4 w-4 mr-2 text-gray-500" />
-                    <span>Hypervisor Systems</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/modular-systems"
-                    className="flex items-center px-4 py-2 text-sm rounded-md hover:bg-gray-100"
-                  >
-                    <Settings className="h-4 w-4 mr-2 text-gray-500" />
-                    <span>Modular Systems</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/network-devices"
-                    className="flex items-center px-4 py-2 text-sm rounded-md hover:bg-gray-100"
-                  >
-                    <Network className="h-4 w-4 mr-2 text-gray-500" />
-                    <span>Network Devices</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/pdu-devices"
-                    className="flex items-center px-4 py-2 text-sm rounded-md hover:bg-gray-100"
-                  >
-                    <Power className="h-4 w-4 mr-2 text-gray-500" />
-                    <span>PDU Devices</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/"
-                    className="flex items-center px-4 py-2 text-sm rounded-md hover:bg-gray-100 text-blue-600 font-medium bg-blue-50"
-                  >
-                    <Server className="h-4 w-4 mr-2 text-blue-500" />
-                    <span>Servers</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/storage-devices"
-                    className="flex items-center px-4 py-2 text-sm rounded-md hover:bg-gray-100"
-                  >
-                    <Database className="h-4 w-4 mr-2 text-gray-500" />
-                    <span>Storage Devices</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/ups-devices"
-                    className="flex items-center px-4 py-2 text-sm rounded-md hover:bg-gray-100"
-                  >
-                    <HardDrive className="h-4 w-4 mr-2 text-gray-500" />
-                    <span>UPS Devices</span>
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          )}
-        </div>
+          {/* Hardware */}
+          <li>
+            <Link
+              href="/hardware"
+              className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <HardDrive className="h-5 w-5" />
+              <span>Hardware</span>
+            </Link>
+          </li>
 
-        <div className="py-2">
-          <div
-            className="font-bold py-2.5 px-4 flex justify-between items-center cursor-pointer hover:bg-gray-100"
-            onClick={() => setCustomGroupsOpen(!customGroupsOpen)}
-          >
-            <span>CUSTOM GROUPS</span>
-            {customGroupsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </div>
-          {customGroupsOpen && (
-            <div className="pl-4">
-              <ul className="space-y-1 py-1">
+          {/* Network */}
+          <li>
+            <Link
+              href="/network"
+              className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <Network className="h-5 w-5" />
+              <span>Network</span>
+            </Link>
+          </li>
+
+          {/* Alerts */}
+          <li>
+            <Link
+              href="/alerts"
+              className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <AlertCircle className="h-5 w-5" />
+              <span>Alerts</span>
+            </Link>
+          </li>
+
+          {/* Users Section */}
+          <li>
+            <button
+              onClick={() => toggleSection("users")}
+              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <div className="flex items-center gap-3">
+                <Users className="h-5 w-5" />
+                <span>Users</span>
+              </div>
+              {openSections.users ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+
+            {openSections.users && (
+              <ul className="mt-1 ml-6 space-y-1">
                 <li>
                   <Link
-                    href="/custom-groups"
-                    className="flex items-center px-4 py-2 text-sm rounded-md hover:bg-gray-100"
+                    href="/users"
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
-                    <Smartphone className="h-4 w-4 mr-2 text-gray-500" />
-                    <span>Create Custom Group</span>
+                    <span>All Users</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/users/roles"
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <span>Roles</span>
                   </Link>
                 </li>
               </ul>
-            </div>
-          )}
+            )}
+          </li>
+
+          {/* Security */}
+          <li>
+            <Link
+              href="/security"
+              className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <Shield className="h-5 w-5" />
+              <span>Security</span>
+            </Link>
+          </li>
+
+          {/* Settings Section */}
+          <li>
+            <button
+              onClick={() => toggleSection("settings")}
+              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <div className="flex items-center gap-3">
+                <Settings className="h-5 w-5" />
+                <span>Settings</span>
+              </div>
+              {openSections.settings ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+
+            {openSections.settings && (
+              <ul className="mt-1 ml-6 space-y-1">
+                <li>
+                  <Link
+                    href="/settings/general"
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <span>General</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/settings/api"
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <span>API</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/settings/notifications"
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <span>Notifications</span>
+                  </Link>
+                </li>
+              </ul>
+            )}
+          </li>
+        </ul>
+      </nav>
+
+      <div className="p-4 border-t border-gray-200">
+        <div className="text-sm text-gray-500">
+          <p>Scout Inventory v1.0.0</p>
         </div>
       </div>
     </div>

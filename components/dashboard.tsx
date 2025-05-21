@@ -88,7 +88,7 @@ export function Dashboard() {
 
   useEffect(() => {
     applyFiltersAndSort()
-  }, [servers, searchQuery, activeTab, sortColumn, sortDirection, selectedFilter])
+  }, [servers, searchQuery, activeTab, sortColumn, sortDirection, selectedFilter, itemsPerPage])
 
   const fetchServers = async () => {
     setIsLoading(true)
@@ -319,16 +319,6 @@ export function Dashboard() {
   const normalCount = filteredServers.filter((server) => server.status === "normal").length
   const unknownCount = filteredServers.filter((server) => server.status === "unknown").length
   const totalCount = filteredServers.length
-  const eolCount = filteredServers.filter((server) => server.lifecycleStatus === "EOL").length
-
-  // Calculate warranty expiry
-  const sixMonthsFromNow = new Date()
-  sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6)
-  const warrantyExpiringCount = filteredServers.filter((server) => {
-    if (!server.warrantyEndDate) return false
-    const warrantyDate = new Date(server.warrantyEndDate)
-    return warrantyDate < sixMonthsFromNow
-  }).length
 
   // Helper function to render sort indicator
   const renderSortIndicator = (column: string) => {
