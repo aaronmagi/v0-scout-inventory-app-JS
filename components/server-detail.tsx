@@ -1,639 +1,611 @@
 "use client"
+
+import { useState } from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, Download, Maximize } from "lucide-react"
-import { getServerById } from "@/lib/data"
-import { useToast } from "@/components/ui/use-toast"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { ChevronLeft, Download } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
+import { downloadCSV, serversToCSV } from "@/lib/csv-utils"
+import type { Server } from "@/lib/data"
 
 interface ServerDetailProps {
-  serverId: string
+  server: Server
 }
 
-export function ServerDetail({ serverId }: ServerDetailProps) {
-  const { toast } = useToast()
-  const server = getServerById(serverId)
+export function ServerDetail({ server }: ServerDetailProps) {
+  const [activeTab, setActiveTab] = useState("overview")
 
   if (!server) {
-    return (
-      <div className="flex-1 p-4">
-        <div className="flex items-center mb-4">
-          <Link href="/" className="text-blue-600 hover:underline flex items-center">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to All Servers
-          </Link>
-        </div>
-        <div className="bg-white p-8 rounded-lg shadow text-center">
-          <h2 className="text-2xl font-bold mb-4">Server Not Found</h2>
-          <p>The server with ID {serverId} could not be found.</p>
-        </div>
-      </div>
-    )
+    return <div>Server not found</div>
   }
 
-  const handleExportServerCSV = async () => {
+  const handleExportCSV = () => {
     try {
+      const csvContent = serversToCSV([server])
+      downloadCSV(csvContent, `server-${server.id}-${new Date().toISOString().slice(0, 10)}.csv`)
       toast({
-        title: "Preparing export",
-        description: "Generating CSV file...",
+        title: "Export Successful",
+        description: `Server details exported to CSV.`,
       })
-
-      // Fetch the complete server data
-      const response = await fetch(`/api/export/servers/${serverId}`)
-
-      if (!response.ok) {
-        throw new Error(`Export failed: ${response.statusText}`)
-      }
-
-      const data = await response.blob()
-
-      // Create a download link
-      const url = window.URL.createObjectURL(data)
-      const link = document.createElement("a")
-      link.href = url
-
-      // Generate filename with server name and current date
-      const date = new Date().toISOString().split("T")[0]
-      const filename = `server-${server.name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-${date}.csv`
-      link.setAttribute("download", filename)
-
-      // Trigger download
-      document.body.appendChild(link)
-      link.click()
-
-      // Clean up
-      link.parentNode?.removeChild(link)
-      window.URL.revokeObjectURL(url)
-
+    } catch (err) {
+      console.error("Error exporting CSV:", err)
       toast({
-        title: "Export successful",
-        description: `Server details exported to ${filename}`,
-      })
-    } catch (error) {
-      console.error("Error exporting server CSV:", error)
-
-      toast({
-        title: "Export failed",
-        description: "There was an error exporting the server data.",
+        title: "Export Failed",
+        description: "There was an error exporting the data.",
         variant: "destructive",
       })
     }
   }
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "critical":
+        return "bg-red-500 text-white"
+      case "warning":
+        return "bg-yellow-500 text-white"
+      case "normal":
+        return "bg-green-500 text-white"
+      default:
+        return "bg-gray-500 text-white"
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "critical":
+        return "Critical"
+      case "warning":
+        return "Warning"
+      case "normal":
+        return "OK"
+      case "unknown":
+      default:
+        return "Unknown"
+    }
+  }
+
   return (
-    <main className="flex-1 p-4 overflow-auto">
+    <div className="space-y-6">
+      {/* Breadcrumb */}
       <div className="flex items-center mb-4">
-        <Link href="/" className="text-blue-600 hover:underline flex items-center">
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to All Servers
+        <Link href="/" className="flex items-center text-blue-600 hover:text-blue-800">
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Back to Dashboard
         </Link>
-        <span className="mx-2">&gt;</span>
-        <span>{server.name}</span>
       </div>
 
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">System Information - {server.name}</h1>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">{server.name}</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge className={getStatusColor(server.status)}>{getStatusLabel(server.status)}</Badge>
+            <span className="text-sm text-gray-500">{server.ipAddress}</span>
+            <span className="text-sm text-gray-500">ID: {server.identifier}</span>
+          </div>
+        </div>
         <div className="flex gap-2">
-          <Button onClick={handleExportServerCSV}>
+          <Button variant="outline" size="sm" onClick={handleExportCSV}>
             <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
-          <Button>
-            <Maximize className="h-4 w-4 mr-2" />
-            Zoom
+            Export
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="summary" className="w-full">
-        <TabsList className="w-full justify-start bg-gray-100 p-0 h-auto">
-          <TabsTrigger
-            value="summary"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            Summary
-          </TabsTrigger>
-          <TabsTrigger
-            value="processors"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            Processors
-          </TabsTrigger>
-          <TabsTrigger
-            value="memory"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            Memory
-          </TabsTrigger>
-          <TabsTrigger
-            value="storage"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            Storage
-          </TabsTrigger>
-          <TabsTrigger
-            value="network"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            Network
-          </TabsTrigger>
-          <TabsTrigger
-            value="power"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            Power
-          </TabsTrigger>
-          <TabsTrigger
-            value="system-info"
-            className="rounded-none data-[state=active]:border-t-2 data-[state=active]:border-t-blue-600 data-[state=active]:border-x data-[state=active]:border-b-0 data-[state=active]:bg-white px-4 py-2"
-          >
-            System Info
-          </TabsTrigger>
+      {/* Tabs */}
+      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-7 md:w-[840px]">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="processors">Processors</TabsTrigger>
+          <TabsTrigger value="memory">Memory</TabsTrigger>
+          <TabsTrigger value="storage">Storage</TabsTrigger>
+          <TabsTrigger value="network">Network</TabsTrigger>
+          <TabsTrigger value="power">Power</TabsTrigger>
+          <TabsTrigger value="system">System</TabsTrigger>
         </TabsList>
 
-        <div className="bg-white p-6 rounded-lg shadow mt-[-1px]">
-          <TabsContent value="summary">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">System Overview</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">System Name</div>
-                  <div>{server.name}</div>
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Server Overview</CardTitle>
+              <CardDescription>Basic information about this server</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-medium mb-2">General Information</h3>
+                  <Table>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium">Name</TableCell>
+                        <TableCell>{server.name}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">IP Address</TableCell>
+                        <TableCell>{server.ipAddress}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Identifier</TableCell>
+                        <TableCell>{server.identifier}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Model</TableCell>
+                        <TableCell>{server.model}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Type</TableCell>
+                        <TableCell>{server.type}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Status</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(server.status)}>{getStatusLabel(server.status)}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
                 </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Model</div>
-                  <div>{server.model}</div>
+                <div>
+                  <h3 className="font-medium mb-2">Management Information</h3>
+                  <Table>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium">Managed State</TableCell>
+                        <TableCell>{server.managedState}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Management Controller</TableCell>
+                        <TableCell>{server.managementController || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Lifecycle Status</TableCell>
+                        <TableCell>{server.lifecycleStatus || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Warranty End Date</TableCell>
+                        <TableCell>{server.warrantyEndDate || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Manufacture Date</TableCell>
+                        <TableCell>{server.manufactureDate || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Purchase Date</TableCell>
+                        <TableCell>{server.purchaseDate || "N/A"}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                {server.generation && (
-                  <div className="flex border-b pb-3">
-                    <div className="w-48 text-gray-700">Generation</div>
-                    <div>{server.generation}</div>
-                  </div>
-                )}
-
-                {server.managementController && (
-                  <div className="flex border-b pb-3">
-                    <div className="w-48 text-gray-700">Management Controller</div>
-                    <div>{server.managementController}</div>
-                  </div>
-                )}
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Service Tag</div>
-                  <div>{server.identifier}</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">System Status</div>
-                  <div className="flex items-center">
-                    {server.status === "normal" && (
-                      <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+          {server.summary && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Summary Information</CardTitle>
+                <CardDescription>Additional server details</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium">Serial Number</TableCell>
+                      <TableCell>{server.summary.serialNumber}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Manufacturer</TableCell>
+                      <TableCell>{server.summary.manufacturer}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Location</TableCell>
+                      <TableCell>{server.summary.location}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Rack Position</TableCell>
+                      <TableCell>{server.summary.rackPosition}</TableCell>
+                    </TableRow>
+                    {server.summary.assetTag && (
+                      <TableRow>
+                        <TableCell className="font-medium">Asset Tag</TableCell>
+                        <TableCell>{server.summary.assetTag}</TableCell>
+                      </TableRow>
                     )}
-                    {server.status === "warning" && (
-                      <span className="inline-block w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                    {server.summary.biosVersion && (
+                      <TableRow>
+                        <TableCell className="font-medium">BIOS Version</TableCell>
+                        <TableCell>{server.summary.biosVersion}</TableCell>
+                      </TableRow>
                     )}
-                    {server.status === "critical" && (
-                      <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                    {server.summary.lastUpdated && (
+                      <TableRow>
+                        <TableCell className="font-medium">Last Updated</TableCell>
+                        <TableCell>{server.summary.lastUpdated}</TableCell>
+                      </TableRow>
                     )}
-                    {server.status === "normal" ? "OK" : server.status.charAt(0).toUpperCase() + server.status.slice(1)}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Processors Tab */}
+        <TabsContent value="processors" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Processor Information</CardTitle>
+              <CardDescription>CPU details and specifications</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {server.processors && server.processors.length > 0 ? (
+                server.processors.map((processor, index) => (
+                  <div key={index} className="mb-6 last:mb-0">
+                    <h3 className="font-medium mb-2">Processor {index + 1}</h3>
+                    <Table>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell className="font-medium">Model</TableCell>
+                          <TableCell>{processor.model}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Manufacturer</TableCell>
+                          <TableCell>{processor.manufacturer}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Cores</TableCell>
+                          <TableCell>{processor.cores}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Threads</TableCell>
+                          <TableCell>{processor.threads}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Speed</TableCell>
+                          <TableCell>{processor.speed}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Status</TableCell>
+                          <TableCell>{processor.status}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4">No processor information available</div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Memory Tab */}
+        <TabsContent value="memory" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Memory Information</CardTitle>
+              <CardDescription>RAM modules and configuration</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {server.memory && server.memory.length > 0 ? (
+                <div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Capacity</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Speed</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {server.memory.map((mem, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{mem.location}</TableCell>
+                          <TableCell>{mem.capacity}</TableCell>
+                          <TableCell>{mem.type}</TableCell>
+                          <TableCell>{mem.speed}</TableCell>
+                          <TableCell>{mem.status}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+
+                  <div className="mt-4">
+                    <h3 className="font-medium mb-2">Memory Summary</h3>
+                    <Table>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell className="font-medium">Total Modules</TableCell>
+                          <TableCell>{server.memory.length}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Total Capacity</TableCell>
+                          <TableCell>
+                            {server.memory
+                              .reduce((total, mem) => {
+                                const capacityMatch = mem.capacity.match(/(\d+)(\w+)/)
+                                if (capacityMatch) {
+                                  const [, size, unit] = capacityMatch
+                                  const sizeNum = Number.parseInt(size)
+                                  return total + (unit.toLowerCase() === "gb" ? sizeNum : sizeNum / 1024)
+                                }
+                                return total
+                              }, 0)
+                              .toFixed(0)}{" "}
+                            GB
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
+              ) : (
+                <div className="text-center py-4">No memory information available</div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Managed State</div>
-                  <div>{server.managedState}</div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
+        {/* Storage Tab */}
+        <TabsContent value="storage" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Storage Information</CardTitle>
+              <CardDescription>Disk drives and storage devices</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {server.storage && server.storage.length > 0 ? (
+                <div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Model</TableHead>
+                        <TableHead>Capacity</TableHead>
+                        <TableHead>Interface</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {server.storage.map((storage, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{storage.id}</TableCell>
+                          <TableCell>{storage.type}</TableCell>
+                          <TableCell>{storage.model}</TableCell>
+                          <TableCell>{storage.capacity}</TableCell>
+                          <TableCell>{storage.interface}</TableCell>
+                          <TableCell>{storage.status}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
 
-          <TabsContent value="processors">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Processor 1</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Processor Name</div>
-                  <div>Intel(R) Xeon(R) Gold 6454S</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Processor Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
+                  <div className="mt-4">
+                    <h3 className="font-medium mb-2">Storage Summary</h3>
+                    <Table>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell className="font-medium">Total Devices</TableCell>
+                          <TableCell>{server.storage.length}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">SSD Devices</TableCell>
+                          <TableCell>{server.storage.filter((s) => s.type === "SSD").length}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">HDD Devices</TableCell>
+                          <TableCell>{server.storage.filter((s) => s.type === "HDD").length}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">NVMe Devices</TableCell>
+                          <TableCell>{server.storage.filter((s) => s.type === "NVMe").length}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
+              ) : (
+                <div className="text-center py-4">No storage information available</div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Processor Speed</div>
-                  <div>2200 MHz</div>
+        {/* Network Tab */}
+        <TabsContent value="network" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Network Information</CardTitle>
+              <CardDescription>Network interfaces and configuration</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {server.network && server.network.length > 0 ? (
+                <div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>MAC Address</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Speed</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {server.network.map((nic, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{nic.id}</TableCell>
+                          <TableCell>{nic.macAddress}</TableCell>
+                          <TableCell>{nic.type}</TableCell>
+                          <TableCell>{nic.speed}</TableCell>
+                          <TableCell>{nic.status}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+
+                  {server.network.some((nic) => nic.ipAddresses && nic.ipAddresses.length > 0) && (
+                    <div className="mt-4">
+                      <h3 className="font-medium mb-2">IP Addresses</h3>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Interface</TableHead>
+                            <TableHead>IP Addresses</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {server.network
+                            .filter((nic) => nic.ipAddresses && nic.ipAddresses.length > 0)
+                            .map((nic, index) => (
+                              <TableRow key={index}>
+                                <TableCell>{nic.id}</TableCell>
+                                <TableCell>{nic.ipAddresses?.join(", ")}</TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </div>
+              ) : (
+                <div className="text-center py-4">No network information available</div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Core Count</div>
-                  <div>32</div>
-                </div>
+        {/* Power Tab */}
+        <TabsContent value="power" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Power Information</CardTitle>
+              <CardDescription>Power supply units and status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {server.power && server.power.length > 0 ? (
+                <div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Capacity</TableHead>
+                        <TableHead>Efficiency</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {server.power.map((psu, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{psu.id}</TableCell>
+                          <TableCell>{psu.type}</TableCell>
+                          <TableCell>{psu.capacity}</TableCell>
+                          <TableCell>{psu.efficiency || "N/A"}</TableCell>
+                          <TableCell>{psu.status}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
 
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Thread Count</div>
-                  <div>64</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Execution Technology</div>
-                  <div>32/32 cores; 64 threads</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Memory Technology</div>
-                  <div>64-bit Capable</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Internal L1 cache</div>
-                  <div>2560 KB</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Internal L2 cache</div>
-                  <div>65536 KB</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Internal L3 cache</div>
-                  <div>61440 KB</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Manufacturer</div>
-                  <div>Intel Corporation</div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="memory">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Memory Module 1</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Capacity</div>
-                  <div>32768 MiB</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Type</div>
-                  <div>DDR5</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Speed</div>
-                  <div>4800 MHz</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Manufacturer</div>
-                  <div>Samsung</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
+                  <div className="mt-4">
+                    <h3 className="font-medium mb-2">Power Status</h3>
+                    <Table>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell className="font-medium">Power State</TableCell>
+                          <TableCell>{server.powerState || "Unknown"}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Boot Status</TableCell>
+                          <TableCell>{server.bootStatus || "Unknown"}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
-              </div>
-            </div>
+              ) : (
+                <div className="text-center py-4">No power information available</div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Memory Module 2</h3>
+        {/* System Tab */}
+        <TabsContent value="system" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>System Information</CardTitle>
+              <CardDescription>Operating system and firmware details</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {server.system ? (
+                <div>
+                  <h3 className="font-medium mb-2">Operating System</h3>
+                  <Table>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium">OS</TableCell>
+                        <TableCell>{server.system.operatingSystem || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">OS Version</TableCell>
+                        <TableCell>{server.system.osVersion || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Kernel Version</TableCell>
+                        <TableCell>{server.system.kernelVersion || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Last Boot Time</TableCell>
+                        <TableCell>{server.system.lastBootTime || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Uptime</TableCell>
+                        <TableCell>{server.system.uptime || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Load Average</TableCell>
+                        <TableCell>{server.system.loadAverage || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Users</TableCell>
+                        <TableCell>{server.system.users !== undefined ? server.system.users : "N/A"}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
 
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Capacity</div>
-                  <div>32768 MiB</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Type</div>
-                  <div>DDR5</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Speed</div>
-                  <div>4800 MHz</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Manufacturer</div>
-                  <div>Samsung</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
+                  <div className="mt-4">
+                    <h3 className="font-medium mb-2">Firmware</h3>
+                    <Table>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell className="font-medium">Firmware Version</TableCell>
+                          <TableCell>{server.firmwareVersion || "N/A"}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Firmware Verification</TableCell>
+                          <TableCell>{server.firmwareVerificationEnabled ? "Enabled" : "Disabled"}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="storage">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Storage Device 1</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Device Name</div>
-                  <div>Disk0</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Model</div>
-                  <div>SAMSUNG PM9A3 1.92TB NVMe</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Type</div>
-                  <div>SSD</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Capacity</div>
-                  <div>1920000000000 Bytes (1.92 TB)</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Firmware Version</div>
-                  <div>GDC5602Q</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Storage Device 2</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Device Name</div>
-                  <div>Disk1</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Model</div>
-                  <div>SAMSUNG PM9A3 1.92TB NVMe</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Type</div>
-                  <div>SSD</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Capacity</div>
-                  <div>1920000000000 Bytes (1.92 TB)</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Firmware Version</div>
-                  <div>GDC5602Q</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="network">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Network Interface 1</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Interface Name</div>
-                  <div>eth0</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">MAC Address</div>
-                  <div>AA:BB:CC:DD:EE:FF</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Speed</div>
-                  <div>10000 Mbps</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Network Interface 2</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Interface Name</div>
-                  <div>eth1</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">MAC Address</div>
-                  <div>AA:BB:CC:DD:EE:00</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Speed</div>
-                  <div>10000 Mbps</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="power">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Power Supply 1</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">PSU Name</div>
-                  <div>PSU1</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Serial Number</div>
-                  <div>CN7792A63100075</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Firmware Version</div>
-                  <div>1.00.40</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">Power Supply 2</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">PSU Name</div>
-                  <div>PSU2</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Serial Number</div>
-                  <div>CN7792A63100076</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Firmware Version</div>
-                  <div>1.00.40</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Status</div>
-                  <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    OK
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="system-info">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3 pb-2 border-b">System Information</h3>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Serial Number (Service Tag)</div>
-                  <div>{server.identifier}</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Hostname (Name)</div>
-                  <div>{server.name}</div>
-                </div>
-
-                {server.generation && (
-                  <div className="flex border-b pb-3">
-                    <div className="w-48 text-gray-700">Generation</div>
-                    <div>{server.generation}</div>
-                  </div>
-                )}
-
-                {server.managementController && (
-                  <div className="flex border-b pb-3">
-                    <div className="w-48 text-gray-700">Management Controller</div>
-                    <div>{server.managementController}</div>
-                  </div>
-                )}
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Location</div>
-                  <div>Data Center 1, Rack A12, Position 14</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Purchase Date</div>
-                  <div>2023-01-15</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Shipped Date</div>
-                  <div>2023-01-25</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Warranty Info</div>
-                  <div>ProSupport Plus, expires 2026-01-15</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Model ID</div>
-                  <div>{server.model}</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Lifecycle Stage Status</div>
-                  <div>Production</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Managed by (Server)</div>
-                  <div>OME-Central</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Mapped Application Service</div>
-                  <div>Web Application Cluster</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Managed By Group</div>
-                  <div>Infrastructure Operations</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Most Recent Discovery (Redfish)</div>
-                  <div>2025-05-15 14:32:17</div>
-                </div>
-
-                <div className="flex border-b pb-3">
-                  <div className="w-48 text-gray-700">Most Recent Discovery (ServiceNow)</div>
-                  <div>2025-05-15 12:00:05</div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-        </div>
+              ) : (
+                <div className="text-center py-4">No system information available</div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
-    </main>
+    </div>
   )
 }

@@ -46,6 +46,7 @@ export function flattenObject(obj: any, prefix = ""): Record<string, string> {
 
 /**
  * Converts an array of server objects to CSV format
+ * Ensures all server details are included
  */
 export function serversToCSV(servers: Server[]): string {
   if (!servers || servers.length === 0) {

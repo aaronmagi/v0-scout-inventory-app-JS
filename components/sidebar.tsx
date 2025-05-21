@@ -1,318 +1,290 @@
 "use client"
 
-import type React from "react"
-
-import Link from "next/link"
 import { useState } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import {
-  LayoutDashboard,
-  Server,
-  Settings,
   ChevronDown,
   ChevronRight,
+  LayoutDashboard,
+  Server,
+  Database,
+  Network,
+  Bell,
   Users,
   Shield,
-  AlertCircle,
-  HardDrive,
-  Network,
-  Database,
-  Monitor,
-  Layers,
+  Settings,
+  Laptop,
+  MonitorSmartphone,
+  Boxes,
   Router,
   Power,
-  StoreIcon as Storage,
+  HardDrive,
   BatteryCharging,
 } from "lucide-react"
-import { PhaseTwoModal } from "./phase-two-modal"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 export function Sidebar() {
-  const [openSections, setOpenSections] = useState({
-    servers: true,
-    settings: false,
-    users: false,
-  })
+  const pathname = usePathname()
+  const [isServersOpen, setIsServersOpen] = useState(true)
+  const [isUsersOpen, setIsUsersOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [phaseTwoModal, setPhaseTwoModal] = useState({ isOpen: false, feature: "" })
 
-  const [modalOpen, setModalOpen] = useState(false)
-  const [selectedFeature, setSelectedFeature] = useState("")
+  const toggleServers = () => setIsServersOpen(!isServersOpen)
+  const toggleUsers = () => setIsUsersOpen(!isUsersOpen)
+  const toggleSettings = () => setIsSettingsOpen(!isSettingsOpen)
 
-  const toggleSection = (section: string) => {
-    setOpenSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }))
+  const showPhaseTwo = (feature: string) => {
+    setPhaseTwoModal({ isOpen: true, feature })
   }
 
-  const handlePhaseTwo = (featureName: string) => (e: React.MouseEvent) => {
-    e.preventDefault()
-    setSelectedFeature(featureName)
-    setModalOpen(true)
+  const closePhaseTwo = () => {
+    setPhaseTwoModal({ isOpen: false, feature: "" })
   }
 
   return (
-    <div className="h-full w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-xl font-bold">Scout Inventory</h2>
-      </div>
-
-      <nav className="flex-1 overflow-y-auto p-2">
-        <ul className="space-y-1">
-          {/* Dashboard */}
-          <li>
-            <Link
-              href="/"
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <LayoutDashboard className="h-5 w-5" />
-              <span>Dashboard</span>
-            </Link>
-          </li>
-
-          {/* Servers Section */}
-          <li>
-            <button
-              onClick={() => toggleSection("servers")}
-              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <div className="flex items-center gap-3">
-                <Server className="h-5 w-5" />
-                <span>Servers</span>
-              </div>
-              {openSections.servers ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </button>
-
-            {openSections.servers && (
-              <ul className="mt-1 ml-6 space-y-1">
-                <li>
-                  <Link
-                    href="/servers"
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <span>All Servers</span>
-                  </Link>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    onClick={handlePhaseTwo("HCI Appliances")}
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <Database className="h-4 w-4" />
-                    <span>HCI Appliances</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    onClick={handlePhaseTwo("Hypervisor Systems")}
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <Monitor className="h-4 w-4" />
-                    <span>Hypervisor Systems</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    onClick={handlePhaseTwo("Modular Systems")}
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <Layers className="h-4 w-4" />
-                    <span>Modular Systems</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    onClick={handlePhaseTwo("Network Devices")}
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <Router className="h-4 w-4" />
-                    <span>Network Devices</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    onClick={handlePhaseTwo("PDU Devices")}
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <Power className="h-4 w-4" />
-                    <span>PDU Devices</span>
-                  </a>
-                </li>
-                <li>
-                  <Link
-                    href="/servers/critical"
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <Server className="h-4 w-4" />
-                    <span>Servers</span>
-                  </Link>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    onClick={handlePhaseTwo("Storage Devices")}
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <Storage className="h-4 w-4" />
-                    <span>Storage Devices</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    onClick={handlePhaseTwo("UPS Devices")}
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <BatteryCharging className="h-4 w-4" />
-                    <span>UPS Devices</span>
-                  </a>
-                </li>
-              </ul>
-            )}
-          </li>
-
-          {/* Hardware */}
-          <li>
-            <a
-              href="#"
-              onClick={handlePhaseTwo("Hardware")}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <HardDrive className="h-5 w-5" />
-              <span>Hardware</span>
-            </a>
-          </li>
-
-          {/* Network */}
-          <li>
-            <a
-              href="#"
-              onClick={handlePhaseTwo("Network")}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <Network className="h-5 w-5" />
-              <span>Network</span>
-            </a>
-          </li>
-
-          {/* Alerts */}
-          <li>
-            <a
-              href="#"
-              onClick={handlePhaseTwo("Alerts")}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <AlertCircle className="h-5 w-5" />
-              <span>Alerts</span>
-            </a>
-          </li>
-
-          {/* Users Section */}
-          <li>
-            <button
-              onClick={() => toggleSection("users")}
-              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <div className="flex items-center gap-3">
-                <Users className="h-5 w-5" />
-                <span>Users</span>
-              </div>
-              {openSections.users ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </button>
-
-            {openSections.users && (
-              <ul className="mt-1 ml-6 space-y-1">
-                <li>
-                  <a
-                    href="#"
-                    onClick={handlePhaseTwo("All Users")}
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <span>All Users</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    onClick={handlePhaseTwo("Roles")}
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <span>Roles</span>
-                  </a>
-                </li>
-              </ul>
-            )}
-          </li>
-
-          {/* Security */}
-          <li>
-            <a
-              href="#"
-              onClick={handlePhaseTwo("Security")}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <Shield className="h-5 w-5" />
-              <span>Security</span>
-            </a>
-          </li>
-
-          {/* Settings Section */}
-          <li>
-            <button
-              onClick={() => toggleSection("settings")}
-              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <div className="flex items-center gap-3">
-                <Settings className="h-5 w-5" />
-                <span>Settings</span>
-              </div>
-              {openSections.settings ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </button>
-
-            {openSections.settings && (
-              <ul className="mt-1 ml-6 space-y-1">
-                <li>
-                  <a
-                    href="#"
-                    onClick={handlePhaseTwo("General Settings")}
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <span>General</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    onClick={handlePhaseTwo("API Settings")}
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <span>API</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    onClick={handlePhaseTwo("Notifications Settings")}
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <span>Notifications</span>
-                  </a>
-                </li>
-              </ul>
-            )}
-          </li>
-        </ul>
-      </nav>
-
-      <div className="p-4 border-t border-gray-200">
-        <div className="text-sm text-gray-500">
-          <p>Scout Inventory v1.0.0</p>
+    <>
+      <div className="w-64 bg-gray-900 text-white h-full flex flex-col">
+        <div className="p-4 border-b border-gray-800">
+          <h1 className="text-xl font-bold">Scout Inventory</h1>
         </div>
+        <nav className="flex-1 overflow-y-auto">
+          <ul className="p-2">
+            <li>
+              <Link
+                href="/"
+                className={`flex items-center p-2 rounded-md ${pathname === "/" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+              >
+                <LayoutDashboard className="mr-2 h-5 w-5" />
+                <span>Dashboard</span>
+              </Link>
+            </li>
+            <li className="mt-2">
+              <button
+                onClick={toggleServers}
+                className="flex items-center justify-between w-full p-2 rounded-md hover:bg-gray-800"
+              >
+                <div className="flex items-center">
+                  <Server className="mr-2 h-5 w-5" />
+                  <span>Servers</span>
+                </div>
+                {isServersOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </button>
+              {isServersOpen && (
+                <ul className="pl-4 mt-1">
+                  <li>
+                    <Link
+                      href="/"
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                    >
+                      <Server className="mr-2 h-4 w-4" />
+                      <span>All Servers</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/"
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/hci" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                    >
+                      <Boxes className="mr-2 h-4 w-4" />
+                      <span>HCI Appliances</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/"
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/hypervisor" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                    >
+                      <Laptop className="mr-2 h-4 w-4" />
+                      <span>Hypervisor Systems</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/"
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/modular" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                    >
+                      <MonitorSmartphone className="mr-2 h-4 w-4" />
+                      <span>Modular Systems</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/"
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/network" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                    >
+                      <Router className="mr-2 h-4 w-4" />
+                      <span>Network Devices</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/"
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/pdu" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                    >
+                      <Power className="mr-2 h-4 w-4" />
+                      <span>PDU Devices</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/"
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/servers" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                    >
+                      <Server className="mr-2 h-4 w-4" />
+                      <span>Servers</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/"
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/storage" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                    >
+                      <HardDrive className="mr-2 h-4 w-4" />
+                      <span>Storage Devices</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/"
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/ups" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                    >
+                      <BatteryCharging className="mr-2 h-4 w-4" />
+                      <span>UPS Devices</span>
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+            <li className="mt-2">
+              <button
+                onClick={() => showPhaseTwo("Hardware")}
+                className="flex items-center w-full p-2 rounded-md hover:bg-gray-800"
+              >
+                <Database className="mr-2 h-5 w-5" />
+                <span>Hardware</span>
+              </button>
+            </li>
+            <li className="mt-2">
+              <button
+                onClick={() => showPhaseTwo("Network")}
+                className="flex items-center w-full p-2 rounded-md hover:bg-gray-800"
+              >
+                <Network className="mr-2 h-5 w-5" />
+                <span>Network</span>
+              </button>
+            </li>
+            <li className="mt-2">
+              <button
+                onClick={() => showPhaseTwo("Alerts")}
+                className="flex items-center w-full p-2 rounded-md hover:bg-gray-800"
+              >
+                <Bell className="mr-2 h-5 w-5" />
+                <span>Alerts</span>
+              </button>
+            </li>
+            <li className="mt-2">
+              <button
+                onClick={toggleUsers}
+                className="flex items-center justify-between w-full p-2 rounded-md hover:bg-gray-800"
+              >
+                <div className="flex items-center">
+                  <Users className="mr-2 h-5 w-5" />
+                  <span>Users</span>
+                </div>
+                {isUsersOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </button>
+              {isUsersOpen && (
+                <ul className="pl-4 mt-1">
+                  <li>
+                    <button
+                      onClick={() => showPhaseTwo("All Users")}
+                      className="flex items-center p-2 rounded-md hover:bg-gray-800 w-full text-left"
+                    >
+                      <Users className="mr-2 h-4 w-4" />
+                      <span>All Users</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => showPhaseTwo("Roles")}
+                      className="flex items-center p-2 rounded-md hover:bg-gray-800 w-full text-left"
+                    >
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>Roles</span>
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </li>
+            <li className="mt-2">
+              <button
+                onClick={() => showPhaseTwo("Security")}
+                className="flex items-center w-full p-2 rounded-md hover:bg-gray-800"
+              >
+                <Shield className="mr-2 h-5 w-5" />
+                <span>Security</span>
+              </button>
+            </li>
+            <li className="mt-2">
+              <button
+                onClick={toggleSettings}
+                className="flex items-center justify-between w-full p-2 rounded-md hover:bg-gray-800"
+              >
+                <div className="flex items-center">
+                  <Settings className="mr-2 h-5 w-5" />
+                  <span>Settings</span>
+                </div>
+                {isSettingsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </button>
+              {isSettingsOpen && (
+                <ul className="pl-4 mt-1">
+                  <li>
+                    <button
+                      onClick={() => showPhaseTwo("General Settings")}
+                      className="flex items-center p-2 rounded-md hover:bg-gray-800 w-full text-left"
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>General</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => showPhaseTwo("API Settings")}
+                      className="flex items-center p-2 rounded-md hover:bg-gray-800 w-full text-left"
+                    >
+                      <Network className="mr-2 h-4 w-4" />
+                      <span>API</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => showPhaseTwo("Notification Settings")}
+                      className="flex items-center p-2 rounded-md hover:bg-gray-800 w-full text-left"
+                    >
+                      <Bell className="mr-2 h-4 w-4" />
+                      <span>Notifications</span>
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </li>
+          </ul>
+        </nav>
+        <div className="p-4 border-t border-gray-800 text-xs text-gray-500">Version 1.0.0</div>
       </div>
 
-      <PhaseTwoModal isOpen={modalOpen} onClose={() => setModalOpen(false)} featureName={selectedFeature} />
-    </div>
+      <Dialog open={phaseTwoModal.isOpen} onOpenChange={closePhaseTwo}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Coming in Phase 2</DialogTitle>
+            <DialogDescription>
+              The {phaseTwoModal.feature} feature will be available in Phase 2 of the Scout Inventory application.
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

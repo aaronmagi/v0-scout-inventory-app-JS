@@ -32,31 +32,49 @@ export function FilterEditor({ filterId }: FilterEditorProps) {
   // Load filter data if editing
   useEffect(() => {
     if (filterId) {
-      const filter = getFilterById(filterId)
-      if (filter) {
-        setFilterName(filter.name)
-        setFilterDescription(filter.description)
-        setShareWith(filter.isPublic ? "all-users" : "only-me")
-        if (filter.redfishResource) {
-          setRedfishResource(filter.redfishResource)
-        }
-        if (filter.rules && filter.rules.length > 0) {
-          setFilterRules(filter.rules)
+      try {
+        const filter = getFilterById(filterId)
+        if (filter) {
+          setFilterName(filter.name)
+          setFilterDescription(filter.description || "")
+          setShareWith(filter.isPublic ? "all-users" : "only-me")
+          if (filter.redfishResource) {
+            setRedfishResource(filter.redfishResource)
+          }
+          if (filter.rules && filter.rules.length > 0) {
+            setFilterRules(filter.rules)
+          } else {
+            // Default rules if none exist
+            setFilterRules([
+              {
+                id: "1",
+                field: "Model Name",
+                operator: "equals",
+                value: "",
+                logic: "AND",
+              },
+            ])
+          }
+          if (filter.query) {
+            setSqlQuery(filter.query)
+          }
         } else {
-          // Default rules if none exist
-          setFilterRules([
-            {
-              id: "1",
-              field: "Model Name",
-              operator: "equals",
-              value: "",
-              logic: "AND",
-            },
-          ])
+          // Handle case where filter is not found
+          toast({
+            title: "Filter not found",
+            description: `Could not find filter with ID ${filterId}`,
+            variant: "destructive",
+          })
+          router.push("/")
         }
-        if (filter.query) {
-          setSqlQuery(filter.query)
-        }
+      } catch (error) {
+        console.error("Error loading filter:", error)
+        toast({
+          title: "Error loading filter",
+          description: "There was an error loading the filter data",
+          variant: "destructive",
+        })
+        router.push("/")
       }
     } else {
       // Default values for new filter
@@ -70,7 +88,7 @@ export function FilterEditor({ filterId }: FilterEditorProps) {
         },
       ])
     }
-  }, [filterId])
+  }, [filterId, router, toast])
 
   const handleAddRule = () => {
     setFilterRules([
@@ -94,10 +112,37 @@ export function FilterEditor({ filterId }: FilterEditorProps) {
   }
 
   const handleSaveFilter = () => {
+    // Validate filter name
+    if (!filterName.trim()) {
+      toast({
+        title: "Filter name required",
+        description: "Please enter a name for this filter",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Create filter object
+    const filter = {
+      id: filterId || `filter-${Date.now()}`,
+      name: filterName,
+      description: filterDescription,
+      isPublic: shareWith === "all-users",
+      rules: filterRules,
+      query: sqlQuery,
+      redfishResource: redfishResource,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+
+    // In a real app, you would save this to a database
+    console.log("Saving filter:", filter)
+
     toast({
       title: "Filter saved",
       description: `Filter "${filterName}" has been saved successfully.`,
     })
+
     router.push("/")
   }
 
