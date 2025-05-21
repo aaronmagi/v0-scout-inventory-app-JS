@@ -45,8 +45,8 @@ export function Sidebar() {
 
   return (
     <>
-      <div className="w-64 bg-gray-900 text-white h-full flex flex-col">
-        <div className="p-4 border-b border-gray-800">
+      <div className="w-64 bg-[#E20074] text-white h-full flex flex-col">
+        <div className="p-4 border-b border-[#B00058]">
           <h1 className="text-xl font-bold">Scout Inventory</h1>
         </div>
         <nav className="flex-1 overflow-y-auto">
@@ -54,7 +54,7 @@ export function Sidebar() {
             <li>
               <Link
                 href="/"
-                className={`flex items-center p-2 rounded-md ${pathname === "/" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                className={`flex items-center p-2 rounded-md ${pathname === "/" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
               >
                 <LayoutDashboard className="mr-2 h-5 w-5" />
                 <span>Dashboard</span>
@@ -63,7 +63,7 @@ export function Sidebar() {
             <li className="mt-2">
               <button
                 onClick={toggleServers}
-                className="flex items-center justify-between w-full p-2 rounded-md hover:bg-gray-800"
+                className="flex items-center justify-between w-full p-2 rounded-md hover:bg-[#B00058]"
               >
                 <div className="flex items-center">
                   <Server className="mr-2 h-5 w-5" />
@@ -76,7 +76,7 @@ export function Sidebar() {
                   <li>
                     <Link
                       href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
                     >
                       <Server className="mr-2 h-4 w-4" />
                       <span>All Servers</span>
@@ -85,7 +85,7 @@ export function Sidebar() {
                   <li>
                     <Link
                       href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/hci" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/hci" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
                     >
                       <Boxes className="mr-2 h-4 w-4" />
                       <span>HCI Appliances</span>
@@ -94,7 +94,7 @@ export function Sidebar() {
                   <li>
                     <Link
                       href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/hypervisor" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/hypervisor" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
                     >
                       <Laptop className="mr-2 h-4 w-4" />
                       <span>Hypervisor Systems</span>
@@ -103,7 +103,7 @@ export function Sidebar() {
                   <li>
                     <Link
                       href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/modular" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/modular" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
                     >
                       <MonitorSmartphone className="mr-2 h-4 w-4" />
                       <span>Modular Systems</span>
@@ -112,7 +112,7 @@ export function Sidebar() {
                   <li>
                     <Link
                       href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/network" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/network" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
                     >
                       <Router className="mr-2 h-4 w-4" />
                       <span>Network Devices</span>
@@ -121,7 +121,7 @@ export function Sidebar() {
                   <li>
                     <Link
                       href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/pdu" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/pdu" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
                     >
                       <Power className="mr-2 h-4 w-4" />
                       <span>PDU Devices</span>
@@ -130,7 +130,7 @@ export function Sidebar() {
                   <li>
                     <Link
                       href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/servers" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/servers" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
                     >
                       <Server className="mr-2 h-4 w-4" />
                       <span>Servers</span>
@@ -139,7 +139,7 @@ export function Sidebar() {
                   <li>
                     <Link
                       href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/storage" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/storage" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
                     >
                       <HardDrive className="mr-2 h-4 w-4" />
                       <span>Storage Devices</span>
@@ -148,7 +148,7 @@ export function Sidebar() {
                   <li>
                     <Link
                       href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/ups" ? "bg-gray-800" : "hover:bg-gray-800"}`}
+                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/ups" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
                     >
                       <BatteryCharging className="mr-2 h-4 w-4" />
                       <span>UPS Devices</span>
@@ -160,7 +160,7 @@ export function Sidebar() {
             <li className="mt-2">
               <button
                 onClick={() => showPhaseTwo("Hardware")}
-                className="flex items-center w-full p-2 rounded-md hover:bg-gray-800"
+                className="flex items-center w-full p-2 rounded-md hover:bg-[#B00058]"
               >
                 <Database className="mr-2 h-5 w-5" />
                 <span>Hardware</span>
@@ -169,7 +169,7 @@ export function Sidebar() {
             <li className="mt-2">
               <button
                 onClick={() => showPhaseTwo("Network")}
-                className="flex items-center w-full p-2 rounded-md hover:bg-gray-800"
+                className="flex items-center w-full p-2 rounded-md hover:bg-[#B00058]"
               >
                 <Network className="mr-2 h-5 w-5" />
                 <span>Network</span>
@@ -178,7 +178,7 @@ export function Sidebar() {
             <li className="mt-2">
               <button
                 onClick={() => showPhaseTwo("Alerts")}
-                className="flex items-center w-full p-2 rounded-md hover:bg-gray-800"
+                className="flex items-center w-full p-2 rounded-md hover:bg-[#B00058]"
               >
                 <Bell className="mr-2 h-5 w-5" />
                 <span>Alerts</span>
@@ -187,7 +187,7 @@ export function Sidebar() {
             <li className="mt-2">
               <button
                 onClick={toggleUsers}
-                className="flex items-center justify-between w-full p-2 rounded-md hover:bg-gray-800"
+                className="flex items-center justify-between w-full p-2 rounded-md hover:bg-[#B00058]"
               >
                 <div className="flex items-center">
                   <Users className="mr-2 h-5 w-5" />
@@ -200,7 +200,7 @@ export function Sidebar() {
                   <li>
                     <button
                       onClick={() => showPhaseTwo("All Users")}
-                      className="flex items-center p-2 rounded-md hover:bg-gray-800 w-full text-left"
+                      className="flex items-center p-2 rounded-md hover:bg-[#B00058] w-full text-left"
                     >
                       <Users className="mr-2 h-4 w-4" />
                       <span>All Users</span>
@@ -209,7 +209,7 @@ export function Sidebar() {
                   <li>
                     <button
                       onClick={() => showPhaseTwo("Roles")}
-                      className="flex items-center p-2 rounded-md hover:bg-gray-800 w-full text-left"
+                      className="flex items-center p-2 rounded-md hover:bg-[#B00058] w-full text-left"
                     >
                       <Shield className="mr-2 h-4 w-4" />
                       <span>Roles</span>
@@ -221,7 +221,7 @@ export function Sidebar() {
             <li className="mt-2">
               <button
                 onClick={() => showPhaseTwo("Security")}
-                className="flex items-center w-full p-2 rounded-md hover:bg-gray-800"
+                className="flex items-center w-full p-2 rounded-md hover:bg-[#B00058]"
               >
                 <Shield className="mr-2 h-5 w-5" />
                 <span>Security</span>
@@ -230,7 +230,7 @@ export function Sidebar() {
             <li className="mt-2">
               <button
                 onClick={toggleSettings}
-                className="flex items-center justify-between w-full p-2 rounded-md hover:bg-gray-800"
+                className="flex items-center justify-between w-full p-2 rounded-md hover:bg-[#B00058]"
               >
                 <div className="flex items-center">
                   <Settings className="mr-2 h-5 w-5" />
@@ -243,7 +243,7 @@ export function Sidebar() {
                   <li>
                     <button
                       onClick={() => showPhaseTwo("General Settings")}
-                      className="flex items-center p-2 rounded-md hover:bg-gray-800 w-full text-left"
+                      className="flex items-center p-2 rounded-md hover:bg-[#B00058] w-full text-left"
                     >
                       <Settings className="mr-2 h-4 w-4" />
                       <span>General</span>
@@ -252,7 +252,7 @@ export function Sidebar() {
                   <li>
                     <button
                       onClick={() => showPhaseTwo("API Settings")}
-                      className="flex items-center p-2 rounded-md hover:bg-gray-800 w-full text-left"
+                      className="flex items-center p-2 rounded-md hover:bg-[#B00058] w-full text-left"
                     >
                       <Network className="mr-2 h-4 w-4" />
                       <span>API</span>
@@ -261,7 +261,7 @@ export function Sidebar() {
                   <li>
                     <button
                       onClick={() => showPhaseTwo("Notification Settings")}
-                      className="flex items-center p-2 rounded-md hover:bg-gray-800 w-full text-left"
+                      className="flex items-center p-2 rounded-md hover:bg-[#B00058] w-full text-left"
                     >
                       <Bell className="mr-2 h-4 w-4" />
                       <span>Notifications</span>
@@ -272,7 +272,7 @@ export function Sidebar() {
             </li>
           </ul>
         </nav>
-        <div className="p-4 border-t border-gray-800 text-xs text-gray-500">Version 1.0.0</div>
+        <div className="p-4 border-t border-[#B00058] text-xs text-white">Version 1.0.0</div>
       </div>
 
       <Dialog open={phaseTwoModal.isOpen} onOpenChange={closePhaseTwo}>

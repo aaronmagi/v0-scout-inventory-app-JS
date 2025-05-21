@@ -3,11 +3,11 @@ import { FilterEditor } from "@/components/filter-editor"
 
 export default function NewFilterPage() {
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <div className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto p-6">
         <FilterEditor />
-      </div>
+      </main>
     </div>
   )
 }

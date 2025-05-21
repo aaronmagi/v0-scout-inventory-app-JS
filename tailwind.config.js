@@ -24,8 +24,8 @@ module.exports = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "#E20074", // T-Mobile Pantone Rhodamine Red U
+          foreground: "#FFFFFF",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -50,6 +50,11 @@ module.exports = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        tmobile: {
+          DEFAULT: "#E20074", // T-Mobile Pantone Rhodamine Red U
+          light: "#FF4D9E",
+          dark: "#B00058",
         },
       },
       borderRadius: {
