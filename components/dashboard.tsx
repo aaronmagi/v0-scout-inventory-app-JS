@@ -1,640 +1,736 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Card } from "@/components/ui/card"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Download, RefreshCw, Search, X, AlertTriangle, CheckCircle, HelpCircle } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
-import { serverData, filterData } from "@/lib/data"
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+import {
+  Download,
+  Search,
+  AlertTriangle,
+  XCircle,
+  Plus,
+  CheckCircle,
+  HelpCircle,
+  RefreshCw,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  MoreVertical,
+} from "lucide-react"
 import { InteractiveSearch } from "@/components/interactive-search"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { serversToCSV, downloadCSV } from "@/lib/csv-utils"
+import { toast } from "@/components/ui/use-toast"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
-const ITEMS_PER_PAGE = 10
-
-// Define the Server type
-type Server = {
+interface ServerType {
   id: string
-  hostname: string
-  ip_address: string
-  operating_system: string
-  cpu_cores: number
-  memory_gb: number
-  disk_space_gb: number
-  location: string
-  owner: string
-  environment: string
-  application: string
-  last_updated: string
-  status: string
-  name?: string
-  ipAddress?: string
-  model?: string
-  identifier?: string
+  ipAddress: string
+  name: string
+  identifier: string
+  model: string
+  type: string
+  managedState: string
+  status: "critical" | "warning" | "normal" | "unknown"
   generation?: string
   managementController?: string
   lifecycleStatus?: string
   warrantyEndDate?: string
   manufactureDate?: string
+  purchaseDate?: string
   powerState?: string
   bootStatus?: string
   firmwareVersion?: string
-  firmwareVerificationEnabled?: boolean
-  passwordPolicyMinLength?: number
-  passwordPolicyRequiresLowercase?: boolean
-  passwordPolicyRequiresUppercase?: boolean
-  passwordPolicyRequiresNumbers?: boolean
-  passwordPolicyRequiresSymbols?: boolean
-  lockdownMode?: boolean
-  type?: string
-  managedState?: string
+  [key: string]: any
+}
+
+interface FilterType {
+  id: string
+  name: string
+  description: string
+  isPublic: boolean
 }
 
 export function Dashboard() {
-  const router = useRouter()
-  const { toast } = useToast()
+  const [servers, setServers] = useState<ServerType[]>([])
+  const [filteredServers, setFilteredServers] = useState<ServerType[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedFilter, setSelectedFilter] = useState("all-servers")
-  const [selectedServers, setSelectedServers] = useState<string[]>([])
-  const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
-  const [filteredServers, setFilteredServers] = useState(serverData)
-  const [activeFilter, setActiveFilter] = useState<string | null>(null)
-  const [isExporting, setIsExporting] = useState(false)
-  const [statusCounts, setStatusCounts] = useState({
-    security: 59,
-    config: 127,
-    policy: 1213,
-    updates: 23,
-  })
-  const [activeStatusFilter, setActiveStatusFilter] = useState<string | null>(null)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [totalPages, setTotalPages] = useState(1)
+  const [sortColumn, setSortColumn] = useState<string | null>(null)
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false)
+  const [filters, setFilters] = useState<FilterType[]>([])
+  const [selectedFilter, setSelectedFilter] = useState("all-servers")
 
-  const applySearchFilter = (query: string) => {
-    let results = serverData
+  useEffect(() => {
+    fetchServers()
+    fetchFilters()
+  }, [])
 
-    // Apply status filter if active
-    if (activeStatusFilter) {
-      results = results.filter((server) => server.status === activeStatusFilter)
+  useEffect(() => {
+    applyFiltersAndSort()
+  }, [servers, searchQuery, activeTab, sortColumn, sortDirection, selectedFilter])
+
+  const fetchServers = async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch("/api/servers")
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setServers(data)
+      setFilteredServers(data)
+      setTotalPages(Math.ceil(data.length / itemsPerPage))
+      setIsLoading(false)
+    } catch (err) {
+      console.error("Error fetching servers:", err)
+      setError("Failed to fetch servers. Please try again.")
+      setIsLoading(false)
     }
-
-    // Then apply search query if present
-    if (query) {
-      results = results.filter((server) => {
-        const searchLower = query.toLowerCase()
-        const name = server.name?.toLowerCase() || ""
-        const ipAddress = server.ipAddress?.toLowerCase() || ""
-        const model = server.model?.toLowerCase() || ""
-        const identifier = server.identifier?.toLowerCase() || ""
-        const generation = server.generation?.toLowerCase() || ""
-        const managementController = server.managementController?.toLowerCase() || ""
-
-        return (
-          name.includes(searchLower) ||
-          ipAddress.includes(searchLower) ||
-          model.includes(searchLower) ||
-          identifier.includes(searchLower) ||
-          generation.includes(searchLower) ||
-          managementController.includes(searchLower)
-        )
-      })
-    }
-
-    setFilteredServers(results)
   }
 
-  // Apply filters when selectedFilter changes
-  useEffect(() => {
-    if (selectedFilter === "all-servers") {
-      // Reset to all servers
-      applySearchFilter(searchQuery)
-      setActiveFilter(null)
-      return
+  const fetchFilters = async () => {
+    try {
+      const response = await fetch("/api/filters")
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setFilters(data)
+    } catch (err) {
+      console.error("Error fetching filters:", err)
+      toast({
+        title: "Error",
+        description: "Failed to load filters. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const applyFiltersAndSort = () => {
+    let result = [...servers]
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(
+        (server) =>
+          (server.name?.toLowerCase() || "").includes(query) ||
+          (server.ipAddress?.toLowerCase() || "").includes(query) ||
+          (server.model?.toLowerCase() || "").includes(query) ||
+          (server.identifier?.toLowerCase() || "").includes(query),
+      )
     }
 
-    const filter = filterData.find((f) => f.id === selectedFilter)
-    if (filter) {
-      setActiveFilter(filter.name)
+    // Apply category filter
+    if (activeTab !== "all") {
+      switch (activeTab) {
+        case "critical":
+          result = result.filter((server) => server.status === "critical")
+          break
+        case "warning":
+          result = result.filter((server) => server.status === "warning")
+          break
+        case "normal":
+          result = result.filter((server) => server.status === "normal")
+          break
+        case "unknown":
+          result = result.filter((server) => server.status === "unknown")
+          break
+        case "eol":
+          result = result.filter((server) => server.lifecycleStatus === "EOL")
+          break
+        case "warranty":
+          // Filter servers with warranty ending in less than 6 months
+          const sixMonthsFromNow = new Date()
+          sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6)
+          result = result.filter((server) => {
+            if (!server.warrantyEndDate) return false
+            const warrantyDate = new Date(server.warrantyEndDate)
+            return warrantyDate < sixMonthsFromNow
+          })
+          break
+      }
+    }
 
-      // Apply the selected filter
-      let results = [...serverData]
-
+    // Apply saved filter if selected
+    if (selectedFilter !== "all-servers") {
+      // This would typically call a more complex filtering logic based on the saved filter
+      // For now, we'll just simulate it with some basic filters
       switch (selectedFilter) {
         case "end-of-life":
-          results = serverData.filter((server) => server.lifecycleStatus === "EOL")
+          result = result.filter((server) => server.lifecycleStatus === "EOL")
           break
         case "end-of-warranty":
-          results = serverData.filter(
-            (server) => server.warrantyEndDate && new Date(server.warrantyEndDate) < new Date(),
-          )
+          const sixMonthsFromNow = new Date()
+          sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6)
+          result = result.filter((server) => {
+            if (!server.warrantyEndDate) return false
+            const warrantyDate = new Date(server.warrantyEndDate)
+            return warrantyDate < sixMonthsFromNow
+          })
           break
         case "manufactured-2022":
-          results = serverData.filter(
-            (server) => server.manufactureDate && new Date(server.manufactureDate) >= new Date("2022-01-01"),
-          )
+          result = result.filter((server) => {
+            if (!server.manufactureDate) return false
+            return server.manufactureDate.startsWith("2022") || server.manufactureDate.startsWith("2023")
+          })
           break
         case "power-on":
-          results = serverData.filter((server) => server.powerState === "On")
+          result = result.filter((server) => server.powerState === "On")
           break
         case "boot-failure":
-          results = serverData.filter((server) => server.bootStatus === "Failed")
-          break
-        case "firmware-version-check":
-          results = serverData.filter(
-            (server) => server.firmwareVersion && ["2.40", "2.41", "2.42"].includes(server.firmwareVersion),
-          )
-          break
-        case "firmware-verification-status":
-          results = serverData.filter((server) => server.firmwareVerificationEnabled === true)
-          break
-        case "password-complexity":
-          results = serverData.filter(
-            (server) =>
-              server.passwordPolicyMinLength >= 12 &&
-              server.passwordPolicyRequiresLowercase === true &&
-              server.passwordPolicyRequiresUppercase === true &&
-              server.passwordPolicyRequiresNumbers === true &&
-              server.passwordPolicyRequiresSymbols === true,
-          )
-          break
-        case "management-network-isolation":
-          results = serverData.filter(
-            (server) =>
-              server.ipAddress.startsWith("10.") ||
-              server.ipAddress.startsWith("172.16.") ||
-              server.ipAddress.startsWith("192.168."),
-          )
-          break
-        case "system-lockdown-mode":
-          results = serverData.filter((server) => server.lockdownMode === true)
-          break
-        default:
-          // If no specific filter logic, just return all servers
+          result = result.filter((server) => server.bootStatus === "Failed")
           break
       }
+    }
 
-      // Apply status filter if active
-      if (activeStatusFilter) {
-        results = results.filter((server) => server.status === activeStatusFilter)
-      }
+    // Apply sorting to all filtered results
+    if (sortColumn) {
+      result.sort((a, b) => {
+        // Special handling for status column to sort by severity
+        if (sortColumn === "status") {
+          const statusOrder = { critical: 0, warning: 1, normal: 2, unknown: 3 }
+          const valueA = statusOrder[a.status] ?? 999
+          const valueB = statusOrder[b.status] ?? 999
+          return sortDirection === "asc" ? valueA - valueB : valueB - valueA
+        }
 
-      // Apply search filter on top of the selected filter
-      if (searchQuery) {
-        results = results.filter((server) => {
-          const query = searchQuery.toLowerCase()
-          const name = server.name?.toLowerCase() || ""
-          const ipAddress = server.ipAddress?.toLowerCase() || ""
-          const model = server.model?.toLowerCase() || ""
-          const identifier = server.identifier?.toLowerCase() || ""
-          const generation = server.generation?.toLowerCase() || ""
-          const managementController = server.managementController?.toLowerCase() || ""
+        const valueA = a[sortColumn] || ""
+        const valueB = b[sortColumn] || ""
 
-          return (
-            name.includes(query) ||
-            ipAddress.includes(query) ||
-            model.includes(query) ||
-            identifier.includes(query) ||
-            generation.includes(query) ||
-            managementController.includes(query)
-          )
-        })
-      }
-
-      setFilteredServers(results)
-      setCurrentPage(1) // Reset to first page when filter changes
-
-      toast({
-        title: `Filter applied: ${filter.name}`,
-        description: `${results.length} servers match this filter`,
+        if (typeof valueA === "string" && typeof valueB === "string") {
+          return sortDirection === "asc" ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA)
+        } else {
+          return sortDirection === "asc" ? (valueA > valueB ? 1 : -1) : valueB > valueA ? 1 : -1
+        }
       })
     }
-  }, [selectedFilter, searchQuery, toast, activeStatusFilter])
 
-  const handleSelectAllServers = (checked: boolean) => {
-    if (checked) {
-      setSelectedServers(currentServers.map((server) => server.id))
-    } else {
-      setSelectedServers([])
-    }
+    setFilteredServers(result)
+    setTotalPages(Math.ceil(result.length / itemsPerPage))
   }
 
-  const handleSelectServer = (serverId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedServers((prev) => [...prev, serverId])
-    } else {
-      setSelectedServers((prev) => prev.filter((id) => id !== serverId))
-    }
-  }
-
-  const handleAdvancedSearch = (query: string) => {
+  const handleSearch = (query: string) => {
     setSearchQuery(query)
-    setAdvancedSearchOpen(false)
-    setCurrentPage(1) // Reset to first page on new search
+    setCurrentPage(1)
+  }
 
-    if (selectedFilter === "all-servers") {
-      applySearchFilter(query)
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    setCurrentPage(1)
+  }
+
+  const handleStatusCardClick = (status: string) => {
+    setActiveTab(status)
+    setCurrentPage(1)
+  }
+
+  const handleSavedFilterChange = (filterId: string) => {
+    setSelectedFilter(filterId)
+    setCurrentPage(1)
+  }
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      setSortColumn(column)
+      setSortDirection("asc")
     }
+  }
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handleExportCSV = () => {
+    try {
+      // Create CSV content - using ALL filtered servers, not just the current page
+      let csvContent = "ID,Name,IP Address,Model,Identifier,Type,Status,Managed State\n"
+
+      filteredServers.forEach((server) => {
+        csvContent += `${server.id},"${server.name}","${server.ipAddress}","${server.model}","${server.identifier}","${server.type}","${server.status}","${server.managedState}"\n`
+      })
+
+      // Create download link
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.setAttribute("href", url)
+      link.setAttribute("download", `server-inventory-${new Date().toISOString().slice(0, 10)}.csv`)
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      toast({
+        title: "Export Successful",
+        description: `${filteredServers.length} servers exported to CSV.`,
+      })
+    } catch (err) {
+      console.error("Error exporting CSV:", err)
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting the data.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const showPhase2Message = () => {
     toast({
-      title: "Advanced search applied",
-      description: `Search query: ${query}`,
+      title: "Coming Soon",
+      description: "TBD: Phase 2",
     })
   }
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value
-    setSearchQuery(query)
-    setCurrentPage(1) // Reset to first page on search
+  // Calculate pagination - apply pagination AFTER sorting
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentItems = filteredServers.slice(indexOfFirstItem, indexOfLastItem)
 
-    if (selectedFilter === "all-servers") {
-      applySearchFilter(query)
+  // Status counts for summary cards
+  const criticalCount = servers.filter((server) => server.status === "critical").length
+  const warningCount = servers.filter((server) => server.status === "warning").length
+  const normalCount = servers.filter((server) => server.status === "normal").length
+  const unknownCount = servers.filter((server) => server.status === "unknown").length
+  const totalCount = servers.length
+  const eolCount = servers.filter((server) => server.lifecycleStatus === "EOL").length
+
+  // Calculate warranty expiry
+  const sixMonthsFromNow = new Date()
+  sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6)
+  const warrantyExpiringCount = servers.filter((server) => {
+    if (!server.warrantyEndDate) return false
+    const warrantyDate = new Date(server.warrantyEndDate)
+    return warrantyDate < sixMonthsFromNow
+  }).length
+
+  // Helper function to render sort indicator
+  const renderSortIndicator = (column: string) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="ml-1 h-4 w-4 inline" />
     }
+    return sortDirection === "asc" ? (
+      <ArrowUp className="ml-1 h-4 w-4 inline text-blue-600" />
+    ) : (
+      <ArrowDown className="ml-1 h-4 w-4 inline text-blue-600" />
+    )
   }
 
-  const handleClearSearch = () => {
-    setSearchQuery("")
-    setActiveStatusFilter(null)
-    setCurrentPage(1) // Reset to first page when clearing search
-
-    if (selectedFilter === "all-servers") {
-      setFilteredServers(serverData)
-    }
-  }
-
-  const handleDownloadCSV = async () => {
-    try {
-      setIsExporting(true)
-
-      // Show loading toast
-      toast({
-        title: "Preparing download",
-        description: "Gathering server data for export...",
-      })
-
-      // Fetch all server details from the API
-      const response = await fetch("/api/export/servers")
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch server data")
-      }
-
-      const allServerData = await response.json()
-
-      // Convert server data to CSV
-      const csvContent = serversToCSV(allServerData)
-
-      // Generate filename with current date
-      const date = new Date().toISOString().split("T")[0]
-      const filename = `server-inventory-${date}.csv`
-
-      // Trigger download
-      downloadCSV(csvContent, filename)
-
-      // Show success toast
-      toast({
-        title: "Download complete",
-        description: `${allServerData.length} servers exported to ${filename}`,
-      })
-    } catch (error) {
-      console.error("Error exporting CSV:", error)
-
-      // Show error toast
-      toast({
-        title: "Download failed",
-        description: "There was an error exporting the server data. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsExporting(false)
-    }
-  }
-
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredServers.length / ITEMS_PER_PAGE)
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-  const endIndex = startIndex + ITEMS_PER_PAGE
-  const currentServers = filteredServers.slice(startIndex, endIndex)
-
-  // Generate page numbers for pagination
-  const getPageNumbers = () => {
-    const pageNumbers = []
-    const maxPagesToShow = 5
-
-    if (totalPages <= maxPagesToShow) {
-      // Show all pages if total pages are less than or equal to maxPagesToShow
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i)
-      }
-    } else {
-      // Always include first page
-      pageNumbers.push(1)
-
-      // Calculate start and end of the middle section
-      let startPage = Math.max(2, currentPage - 1)
-      let endPage = Math.min(totalPages - 1, currentPage + 1)
-
-      // Adjust if we're near the beginning
-      if (currentPage <= 3) {
-        endPage = 4
-      }
-
-      // Adjust if we're near the end
-      if (currentPage >= totalPages - 2) {
-        startPage = totalPages - 3
-      }
-
-      // Add ellipsis after first page if needed
-      if (startPage > 2) {
-        pageNumbers.push("ellipsis-start")
-      }
-
-      // Add middle pages
-      for (let i = startPage; i <= endPage; i++) {
-        pageNumbers.push(i)
-      }
-
-      // Add ellipsis before last page if needed
-      if (endPage < totalPages - 1) {
-        pageNumbers.push("ellipsis-end")
-      }
-
-      // Always include last page
-      pageNumbers.push(totalPages)
-    }
-
-    return pageNumbers
-  }
-
-  const pageNumbers = getPageNumbers()
-
-  // Handle page navigation
-  const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page)
+  // Helper function to get status label
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "critical":
+        return "Critical"
+      case "warning":
+        return "Warning"
+      case "normal":
+        return "OK"
+      case "unknown":
+        return "Unknown"
+      default:
+        return status
     }
   }
 
   return (
-    <main className="flex-1 overflow-auto bg-gray-50">
-      <div className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">All Servers</h1>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="flex items-center">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            {/* Actions button removed */}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-4 gap-4 mb-5">
-          <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
-            <div>
-              <div className="text-2xl font-bold">{statusCounts.security}</div>
-              <div className="text-sm text-gray-500">Security</div>
-            </div>
-            <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white text-xl">
-              <AlertTriangle size={24} />
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
-            <div>
-              <div className="text-2xl font-bold">{statusCounts.config}</div>
-              <div className="text-sm text-gray-500">Config</div>
-            </div>
-            <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xl">
-              <AlertTriangle size={24} />
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
-            <div>
-              <div className="text-2xl font-bold">{statusCounts.policy}</div>
-              <div className="text-sm text-gray-500">Policy</div>
-            </div>
-            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-xl">
-              <CheckCircle size={24} />
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
-            <div>
-              <div className="text-2xl font-bold">{statusCounts.updates}</div>
-              <div className="text-sm text-gray-500">Updates</div>
-            </div>
-            <div className="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center text-white text-xl">
-              <HelpCircle size={24} />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-2 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-            <Input
-              placeholder="Search for servers by name, IP, model..."
-              className="pl-10 bg-white"
-              value={searchQuery}
-              onChange={handleSearchChange}
-            />
-            {searchQuery && (
-              <button
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                onClick={handleClearSearch}
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
-          <Button variant="outline" onClick={() => setAdvancedSearchOpen(true)}>
-            Advanced Search
+    <main className="flex-1 p-4 overflow-auto">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">All Servers</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => fetchServers()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
           </Button>
-          <Dialog open={advancedSearchOpen} onOpenChange={setAdvancedSearchOpen}>
-            <DialogContent className="sm:max-w-[700px]">
-              <DialogHeader>
-                <DialogTitle>Advanced Search</DialogTitle>
-                <DialogDescription>
-                  Build complex search queries with multiple conditions and operators.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="py-4">
-                <InteractiveSearch onSearch={handleAdvancedSearch} />
-              </div>
-            </DialogContent>
-          </Dialog>
         </div>
+      </div>
 
-        <div className="mb-4 flex gap-2">
-          <div className="flex-1">
-            <Select value={selectedFilter} onValueChange={setSelectedFilter}>
-              <SelectTrigger className="w-full bg-white">
+      {/* Status Cards - Made fully clickable with consistent sizing */}
+      <div className="grid grid-cols-5 gap-4 mb-6">
+        <Card
+          className="bg-white shadow hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => handleStatusCardClick("all")}
+        >
+          <div className="flex items-center p-4 h-full">
+            <div className="bg-blue-100 p-3 rounded-full mr-4">
+              <CheckCircle className="h-6 w-6 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Total</p>
+              <h3 className="text-2xl font-bold text-blue-500">{totalCount}</h3>
+            </div>
+          </div>
+        </Card>
+
+        <Card
+          className="bg-white shadow hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => handleStatusCardClick("critical")}
+        >
+          <div className="flex items-center p-4 h-full">
+            <div className="bg-red-100 p-3 rounded-full mr-4">
+              <XCircle className="h-6 w-6 text-red-500" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Critical</p>
+              <h3 className="text-2xl font-bold text-red-500">{criticalCount}</h3>
+            </div>
+          </div>
+        </Card>
+
+        <Card
+          className="bg-white shadow hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => handleStatusCardClick("warning")}
+        >
+          <div className="flex items-center p-4 h-full">
+            <div className="bg-yellow-100 p-3 rounded-full mr-4">
+              <AlertTriangle className="h-6 w-6 text-yellow-500" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Warning</p>
+              <h3 className="text-2xl font-bold text-yellow-500">{warningCount}</h3>
+            </div>
+          </div>
+        </Card>
+
+        <Card
+          className="bg-white shadow hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => handleStatusCardClick("normal")}
+        >
+          <div className="flex items-center p-4 h-full">
+            <div className="bg-green-100 p-3 rounded-full mr-4">
+              <CheckCircle className="h-6 w-6 text-green-500" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">OK</p>
+              <h3 className="text-2xl font-bold text-green-500">{normalCount}</h3>
+            </div>
+          </div>
+        </Card>
+
+        <Card
+          className="bg-white shadow hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => handleStatusCardClick("unknown")}
+        >
+          <div className="flex items-center p-4 h-full">
+            <div className="bg-gray-100 p-3 rounded-full mr-4">
+              <HelpCircle className="h-6 w-6 text-gray-500" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Unknown</p>
+              <h3 className="text-2xl font-bold text-gray-500">{unknownCount}</h3>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Search bar */}
+      <div className="mb-6 relative">
+        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+          <Search className="h-5 w-5 text-gray-400" />
+        </div>
+        <Input
+          placeholder="Search for servers by name, IP, model..."
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+          className="pl-10 py-6 text-base"
+        />
+        <Button
+          variant="outline"
+          className="absolute right-2 top-1/2 transform -translate-y-1/2"
+          onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+        >
+          Advanced Search
+        </Button>
+      </div>
+
+      {showAdvancedSearch && (
+        <div className="mb-6 bg-white p-4 rounded-lg shadow">
+          <InteractiveSearch onSearch={handleSearch} />
+        </div>
+      )}
+
+      {/* Saved Filters Section */}
+      <div className="bg-white rounded-lg shadow mb-6 p-4">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center">
+            <Select value={selectedFilter} onValueChange={handleSavedFilterChange}>
+              <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="All Servers" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all-servers">All Servers</SelectItem>
-                <SelectGroup>
-                  <SelectLabel>Basic Filters</SelectLabel>
-                  <SelectItem value="end-of-life">End of Life</SelectItem>
-                  <SelectItem value="end-of-warranty">End of Warranty</SelectItem>
-                  <SelectItem value="manufactured-2022">Manufactured 2022+</SelectItem>
-                  <SelectItem value="power-on">Power On</SelectItem>
-                  <SelectItem value="boot-failure">Boot Failure</SelectItem>
-                </SelectGroup>
-                <SelectGroup>
-                  <SelectLabel>Firmware Management Filters</SelectLabel>
-                  <SelectItem value="firmware-version-check">Firmware Version Check</SelectItem>
-                  <SelectItem value="firmware-verification-status">Firmware Verification Status</SelectItem>
-                </SelectGroup>
+                {filters.map((filter) => (
+                  <SelectItem key={filter.id} value={filter.id}>
+                    {filter.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+
+            {selectedFilter !== "all-servers" && (
+              <Link href={`/filters/${selectedFilter}`} className="ml-2">
+                <Button variant="outline" size="sm">
+                  Edit Filter
+                </Button>
+              </Link>
+            )}
           </div>
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/filters/${selectedFilter}`)}
-            disabled={selectedFilter === "all-servers"}
-          >
-            Edit Filter
-          </Button>
-          <Button onClick={() => router.push("/filters/new")} className="bg-blue-600 hover:bg-blue-700">
-            New Filter
-          </Button>
-        </div>
 
-        <div className="mb-4">
-          <Button variant="outline" onClick={handleDownloadCSV} disabled={isExporting} className="flex items-center">
-            <Download className="h-4 w-4 mr-2" />
-            {isExporting ? "Exporting..." : "Download CSV"}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExportCSV}>
+              <Download className="h-4 w-4 mr-2" />
+              Download CSV ({filteredServers.length} servers)
+            </Button>
+            <Link href="/filters/new">
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-1" />
+                New Filter
+              </Button>
+            </Link>
+          </div>
         </div>
+      </div>
 
-        <div className="bg-white rounded-lg shadow overflow-hidden mb-4">
-          <div className="overflow-x-auto max-h-[calc(100vh-20rem)] overflow-y-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="p-3 text-left">
-                    <Checkbox
-                      checked={selectedServers.length === currentServers.length && currentServers.length > 0}
-                      onCheckedChange={(checked) => handleSelectAllServers(!!checked)}
+      <div className="bg-white rounded-lg shadow mb-6">
+        <Tabs defaultValue="all" className="w-full" onValueChange={handleTabChange} value={activeTab}>
+          <TabsContent value={activeTab} className="m-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10 cursor-pointer hover:bg-gray-50" onClick={() => handleSort("status")}>
+                      <div className="flex items-center">
+                        Status
+                        {renderSortIndicator("status")}
+                      </div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-gray-50" onClick={() => handleSort("ipAddress")}>
+                      <div className="flex items-center">
+                        IP Address
+                        {renderSortIndicator("ipAddress")}
+                      </div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-gray-50" onClick={() => handleSort("name")}>
+                      <div className="flex items-center">
+                        Name
+                        {renderSortIndicator("name")}
+                      </div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-gray-50" onClick={() => handleSort("identifier")}>
+                      <div className="flex items-center">
+                        Identifier
+                        {renderSortIndicator("identifier")}
+                      </div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-gray-50" onClick={() => handleSort("model")}>
+                      <div className="flex items-center">
+                        Model
+                        {renderSortIndicator("model")}
+                      </div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-gray-50" onClick={() => handleSort("type")}>
+                      <div className="flex items-center">
+                        Type
+                        {renderSortIndicator("type")}
+                      </div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-gray-50" onClick={() => handleSort("managedState")}>
+                      <div className="flex items-center">
+                        Managed State
+                        {renderSortIndicator("managedState")}
+                      </div>
+                    </TableHead>
+                    <TableHead className="w-20">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        Loading servers...
+                      </TableCell>
+                    </TableRow>
+                  ) : error ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-red-500">
+                        {error}
+                      </TableCell>
+                    </TableRow>
+                  ) : currentItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        No servers found matching your criteria.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    currentItems.map((server) => (
+                      <TableRow key={server.id}>
+                        <TableCell>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-help">
+                                  {server.status === "critical" && <div className="w-3 h-3 rounded-full bg-red-500" />}
+                                  {server.status === "warning" && (
+                                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                                  )}
+                                  {server.status === "normal" && <div className="w-3 h-3 rounded-full bg-green-500" />}
+                                  {server.status === "unknown" && <div className="w-3 h-3 rounded-full bg-gray-500" />}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{getStatusLabel(server.status)}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
+                        <TableCell>{server.ipAddress || "-"}</TableCell>
+                        <TableCell>
+                          <Link href={`/servers/${server.id}`} className="text-blue-600 hover:underline">
+                            {server.name || "-"}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{server.identifier || "-"}</TableCell>
+                        <TableCell>{server.model || "-"}</TableCell>
+                        <TableCell>{server.type || "-"}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              server.managedState?.includes("Alerts")
+                                ? "default"
+                                : server.managedState === "Managed"
+                                  ? "outline"
+                                  : "secondary"
+                            }
+                          >
+                            {server.managedState || "-"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <span className="sr-only">Open menu</span>
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={showPhase2Message}>TBD: Phase 2</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="flex items-center justify-between p-4 border-t">
+              <div className="text-sm text-gray-500">
+                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredServers.length)} of{" "}
+                {filteredServers.length} servers
+              </div>
+
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
                     />
-                  </th>
-                  <th className="p-3 text-left font-medium">Status</th>
-                  <th className="p-3 text-left font-medium">IP Address</th>
-                  <th className="p-3 text-left font-medium">Name</th>
-                  <th className="p-3 text-left font-medium">Identifier</th>
-                  <th className="p-3 text-left font-medium">Model</th>
-                  <th className="p-3 text-left font-medium">Type</th>
-                  <th className="p-3 text-left font-medium">Managed State</th>
-                  <th className="p-3 text-left font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentServers.length > 0 ? (
-                  currentServers.map((server) => (
-                    <tr key={server.id} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="p-3">
-                        <Checkbox
-                          checked={selectedServers.includes(server.id)}
-                          onCheckedChange={(checked) => handleSelectServer(server.id, !!checked)}
-                        />
-                      </td>
-                      <td className="p-3">
-                        {server.status === "critical" && (
-                          <span className="inline-block w-3 h-3 bg-red-500 rounded-full"></span>
-                        )}
-                        {server.status === "warning" && (
-                          <span className="inline-block w-3 h-3 bg-yellow-500 rounded-full"></span>
-                        )}
-                        {server.status === "normal" && (
-                          <span className="inline-block w-3 h-3 bg-green-500 rounded-full"></span>
-                        )}
-                        {server.status === "unknown" && (
-                          <span className="inline-block w-3 h-3 bg-gray-500 rounded-full"></span>
-                        )}
-                      </td>
-                      <td className="p-3">{server.ipAddress}</td>
-                      <td className="p-3">
-                        <Link href={`/servers/${server.id}`} className="text-blue-600 hover:underline">
-                          {server.name || server.ipAddress}
-                        </Link>
-                      </td>
-                      <td className="p-3">{server.identifier}</td>
-                      <td className="p-3">{server.model}</td>
-                      <td className="p-3">{server.type || "Compute"}</td>
-                      <td className="p-3">{server.managedState || "Managed with Alerts"}</td>
-                      <td className="p-3 text-center">...</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={9} className="p-4 text-center text-gray-500">
-                      No servers found matching your search criteria.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </PaginationItem>
 
-          <div className="flex justify-between items-center p-4 bg-white sticky bottom-0 border-t border-gray-200">
-            <div className="text-sm text-gray-500">
-              Showing {filteredServers.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, filteredServers.length)} of{" "}
-              {filteredServers.length} servers
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    // Show pages around current page
+                    let pageNum = i + 1
+                    if (totalPages > 5) {
+                      if (currentPage > 3) {
+                        pageNum = currentPage - 3 + i
+                      }
+                      if (pageNum > totalPages - 4) {
+                        pageNum = totalPages - 4 + i
+                      }
+                    }
+
+                    return (
+                      <PaginationItem key={pageNum}>
+                        <PaginationLink isActive={currentPage === pageNum} onClick={() => handlePageChange(pageNum)}>
+                          {pageNum}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  })}
+
+                  {totalPages > 5 && currentPage < totalPages - 2 && (
+                    <PaginationItem>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  )}
+
+                  {totalPages > 5 && currentPage < totalPages - 1 && (
+                    <PaginationItem>
+                      <PaginationLink onClick={() => handlePageChange(totalPages)}>{totalPages}</PaginationLink>
+                    </PaginationItem>
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Rows per page:</span>
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={(value) => {
+                    setItemsPerPage(Number(value))
+                    setCurrentPage(1)
+                  }}
+                >
+                  <SelectTrigger className="w-16 h-8">
+                    <SelectValue placeholder="10" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-
-            <div className="flex gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                «
-              </Button>
-
-              {pageNumbers.map((pageNumber, index) =>
-                pageNumber === "ellipsis-start" || pageNumber === "ellipsis-end" ? (
-                  <span key={`ellipsis-${index}`} className="flex items-center justify-center h-8 w-8">
-                    ...
-                  </span>
-                ) : (
-                  <Button
-                    key={`page-${pageNumber}`}
-                    variant={currentPage === pageNumber ? "default" : "outline"}
-                    size="icon"
-                    className={`h-8 w-8 ${currentPage === pageNumber ? "bg-blue-600 text-white" : ""}`}
-                    onClick={() => goToPage(Number(pageNumber))}
-                  >
-                    {pageNumber}
-                  </Button>
-                ),
-              )}
-
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage === totalPages || totalPages === 0}
-              >
-                »
-              </Button>
-            </div>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </main>
   )

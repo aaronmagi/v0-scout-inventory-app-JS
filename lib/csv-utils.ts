@@ -1,147 +1,107 @@
-/**
- * Safely converts a value to string, handling undefined and null values
- * @param value The value to convert to string
- * @returns String representation of the value or empty string if undefined/null
- */
-function safeToString(value: any): string {
-  if (value === undefined || value === null) {
-    return ""
-  }
-  return String(value)
-}
+import type { Server } from "@/lib/data"
 
 /**
- * Flattens a nested object structure into a single-level object
- * @param obj The object to flatten
- * @param prefix Prefix for the flattened keys
- * @returns A flattened object
+ * Flattens a nested object into a single-level object with dot notation for keys
  */
-function flattenObject(obj: any, prefix = ""): Record<string, string> {
+export function flattenObject(obj: any, prefix = ""): Record<string, string> {
   const flattened: Record<string, string> = {}
 
-  // Handle null or undefined
-  if (obj === null || obj === undefined) {
-    return flattened
-  }
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      const value = obj[key]
+      const newKey = prefix ? `${prefix}.${key}` : key
 
-  // Handle arrays by converting them to comma-separated strings
-  if (Array.isArray(obj)) {
-    // For arrays of objects, flatten each object and join with semicolons
-    if (obj.length > 0 && typeof obj[0] === "object" && obj[0] !== null) {
-      const arrayOfFlattenedObjects = obj.map((item) => {
-        const flatItem = flattenObject(item)
-        return Object.entries(flatItem)
-          .map(([key, value]) => `${key}: ${value}`)
-          .join(", ")
-      })
-      flattened[prefix.slice(0, -1)] = arrayOfFlattenedObjects.join("; ")
-    } else {
-      // For simple arrays, join with commas
-      flattened[prefix.slice(0, -1)] = obj.filter((item) => item !== null && item !== undefined).join(", ")
-    }
-    return flattened
-  }
-
-  // Handle objects by recursively flattening them
-  if (typeof obj === "object") {
-    Object.entries(obj).forEach(([key, value]) => {
-      const newPrefix = prefix ? `${prefix}${key}.` : `${key}.`
-
+      // Skip null or undefined values
       if (value === null || value === undefined) {
-        flattened[newPrefix.slice(0, -1)] = ""
-      } else if (typeof value === "object") {
-        Object.assign(flattened, flattenObject(value, newPrefix))
-      } else {
-        flattened[newPrefix.slice(0, -1)] = safeToString(value)
+        continue
       }
-    })
-    return flattened
+
+      // Handle arrays specially
+      if (Array.isArray(value)) {
+        // For arrays of objects, flatten each object and add index to key
+        if (value.length > 0 && typeof value[0] === "object") {
+          value.forEach((item, index) => {
+            const flatItem = flattenObject(item, `${newKey}[${index}]`)
+            Object.assign(flattened, flatItem)
+          })
+        } else {
+          // For arrays of primitives, join with commas
+          flattened[newKey] = value.join(", ")
+        }
+      }
+      // Recursively flatten nested objects
+      else if (typeof value === "object" && Object.keys(value).length > 0) {
+        const flatObject = flattenObject(value, newKey)
+        Object.assign(flattened, flatObject)
+      }
+      // Handle primitive values
+      else {
+        flattened[newKey] = String(value)
+      }
+    }
   }
 
-  // Handle primitive values
-  flattened[prefix.slice(0, -1)] = safeToString(obj)
   return flattened
 }
 
 /**
- * Escapes a value for CSV format
- * @param value The value to escape
- * @returns Escaped value
+ * Converts an array of server objects to CSV format
  */
-function escapeCSV(value: string): string {
-  if (!value) return ""
-
-  // If the value contains commas, quotes, or newlines, wrap it in quotes and escape any quotes
-  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-    return `"${value.replace(/"/g, '""')}"`
-  }
-  return value
-}
-
-// Function to convert server data to CSV format
-export function serversToCSV(servers: any[]): string {
+export function serversToCSV(servers: Server[]): string {
   if (!servers || servers.length === 0) {
     return ""
   }
 
-  // Get all unique keys from all server objects
-  const allKeys = new Set<string>()
-  servers.forEach((server) => {
-    Object.keys(server).forEach((key) => allKeys.add(key))
+  // Flatten all servers to get all possible headers
+  const flattenedServers = servers.map((server) => flattenObject(server))
+
+  // Get all unique headers from all servers
+  const allHeaders = new Set<string>()
+  flattenedServers.forEach((server) => {
+    Object.keys(server).forEach((key) => allHeaders.add(key))
   })
 
-  // Convert Set to Array and sort alphabetically
-  const headers = Array.from(allKeys).sort()
+  // Convert headers to array and sort for consistent output
+  const headers = Array.from(allHeaders).sort()
 
   // Create CSV header row
-  let csv = headers.join(",") + "\n"
-
-  // Add data rows
-  servers.forEach((server) => {
-    const row = headers.map((header) => {
-      const value = server[header]
-
-      // Handle different data types
-      if (value === undefined || value === null) {
-        return ""
-      } else if (typeof value === "string") {
-        // Escape quotes and wrap in quotes if contains comma, quote or newline
-        if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-          return `"${value.replace(/"/g, '""')}"`
-        }
-        return value
-      } else if (typeof value === "boolean") {
-        return value ? "true" : "false"
-      } else if (value instanceof Date) {
-        return value.toISOString()
-      } else {
-        return String(value)
-      }
+  const headerRow = headers
+    .map((header) => {
+      // Format header for better readability
+      const formattedHeader = header
+        .replace(/\./g, " > ") // Replace dots with ' > '
+        .replace(/\[(\d+)\]/g, " $1") // Replace [0] with ' 0'
+      return `"${formattedHeader}"`
     })
+    .join(",")
 
-    csv += row.join(",") + "\n"
-  })
+  // Create data rows
+  const dataRows = flattenedServers
+    .map((server) => {
+      return headers
+        .map((header) => {
+          const value = server[header] || ""
+          // Escape quotes and wrap in quotes
+          return `"${value.replace(/"/g, '""')}"`
+        })
+        .join(",")
+    })
+    .join("\n")
 
-  return csv
+  // Combine header and data rows
+  return `${headerRow}\n${dataRows}`
 }
 
-// Function to trigger CSV download in the browser
+/**
+ * Triggers a CSV download in the browser
+ */
 export function downloadCSV(csvContent: string, filename: string): void {
-  // Create a blob with the CSV data
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-
-  // Create a download link
-  const link = document.createElement("a")
-
-  // Create a URL for the blob
   const url = URL.createObjectURL(blob)
-
-  // Set link properties
+  const link = document.createElement("a")
   link.setAttribute("href", url)
   link.setAttribute("download", filename)
   link.style.visibility = "hidden"
-
-  // Add to document, click to download, then remove
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
