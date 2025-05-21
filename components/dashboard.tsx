@@ -314,17 +314,17 @@ export function Dashboard() {
   const currentItems = filteredServers.slice(indexOfFirstItem, indexOfLastItem)
 
   // Status counts for summary cards
-  const criticalCount = servers.filter((server) => server.status === "critical").length
-  const warningCount = servers.filter((server) => server.status === "warning").length
-  const normalCount = servers.filter((server) => server.status === "normal").length
-  const unknownCount = servers.filter((server) => server.status === "unknown").length
-  const totalCount = servers.length
-  const eolCount = servers.filter((server) => server.lifecycleStatus === "EOL").length
+  const criticalCount = filteredServers.filter((server) => server.status === "critical").length
+  const warningCount = filteredServers.filter((server) => server.status === "warning").length
+  const normalCount = filteredServers.filter((server) => server.status === "normal").length
+  const unknownCount = filteredServers.filter((server) => server.status === "unknown").length
+  const totalCount = filteredServers.length
+  const eolCount = filteredServers.filter((server) => server.lifecycleStatus === "EOL").length
 
   // Calculate warranty expiry
   const sixMonthsFromNow = new Date()
   sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6)
-  const warrantyExpiringCount = servers.filter((server) => {
+  const warrantyExpiringCount = filteredServers.filter((server) => {
     if (!server.warrantyEndDate) return false
     const warrantyDate = new Date(server.warrantyEndDate)
     return warrantyDate < sixMonthsFromNow
