@@ -305,15 +305,15 @@ export function Dashboard() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "critical":
-        return <AlertCircle className="h-6 w-6 text-red-500" />
+        return <AlertCircle className="h-10 w-10 text-red-500" />
       case "warning":
-        return <AlertTriangle className="h-6 w-6 text-yellow-500" />
+        return <AlertTriangle className="h-10 w-10 text-yellow-500" />
       case "normal":
-        return <CheckCircle className="h-6 w-6 text-green-500" />
+        return <CheckCircle className="h-10 w-10 text-green-500" />
       case "unknown":
-        return <HelpCircle className="h-6 w-6 text-gray-500" />
+        return <HelpCircle className="h-10 w-10 text-gray-500" />
       default:
-        return <ServerIcon className="h-6 w-6 text-gray-500" />
+        return <ServerIcon className="h-10 w-10 text-gray-500" />
     }
   }
 
@@ -334,7 +334,7 @@ export function Dashboard() {
         <Card className="cursor-pointer hover:bg-gray-50" onClick={() => handleStatusCardClick("all")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Servers</CardTitle>
-            <ServerIcon className="h-6 w-6 text-gray-500" />
+            <ServerIcon className="h-10 w-10 text-gray-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalCount}</div>
@@ -343,7 +343,7 @@ export function Dashboard() {
         <Card className="cursor-pointer hover:bg-gray-50" onClick={() => handleStatusCardClick("critical")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Critical</CardTitle>
-            <AlertCircle className="h-6 w-6 text-red-500" />
+            <AlertCircle className="h-10 w-10 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{criticalCount}</div>
@@ -352,7 +352,7 @@ export function Dashboard() {
         <Card className="cursor-pointer hover:bg-gray-50" onClick={() => handleStatusCardClick("warning")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Warning</CardTitle>
-            <AlertTriangle className="h-6 w-6 text-yellow-500" />
+            <AlertTriangle className="h-10 w-10 text-yellow-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{warningCount}</div>
@@ -361,7 +361,7 @@ export function Dashboard() {
         <Card className="cursor-pointer hover:bg-gray-50" onClick={() => handleStatusCardClick("normal")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">OK</CardTitle>
-            <CheckCircle className="h-6 w-6 text-green-500" />
+            <CheckCircle className="h-10 w-10 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{normalCount}</div>
@@ -370,7 +370,7 @@ export function Dashboard() {
         <Card className="cursor-pointer hover:bg-gray-50" onClick={() => handleStatusCardClick("unknown")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Unknown</CardTitle>
-            <HelpCircle className="h-6 w-6 text-gray-500" />
+            <HelpCircle className="h-10 w-10 text-gray-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{unknownCount}</div>

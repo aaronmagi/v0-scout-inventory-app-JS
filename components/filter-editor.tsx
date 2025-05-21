@@ -213,7 +213,7 @@ export function FilterEditor({ filterId }: FilterEditorProps) {
   const logicOperators = ["AND", "OR"]
 
   return (
-    <main className="flex-1 p-4 overflow-auto">
+    <div className="flex-1 p-4 overflow-auto">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Filter Editor</h1>
         <div className="flex gap-2">
@@ -649,6 +649,6 @@ ORDER BY hostname;`
           ))}
         </div>
       </div>
-    </main>
+    </div>
   )
 }
