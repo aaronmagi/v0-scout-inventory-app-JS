@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Plus, X } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { getFilterById, type FilterRule } from "@/lib/data"
+import { PhaseTwoModal } from "@/components/phase-two-modal"
 
 interface FilterEditorProps {
   filterId?: string
@@ -28,6 +29,9 @@ export function FilterEditor({ filterId }: FilterEditorProps) {
   const [redfishResource, setRedfishResource] = useState("")
   const [filterRules, setFilterRules] = useState<FilterRule[]>([])
   const [sqlQuery, setSqlQuery] = useState("")
+
+  const [showPhaseTwo, setShowPhaseTwo] = useState(false)
+  const [phaseTwoFeature, setPhaseTwoFeature] = useState("Save Options")
 
   // Load filter data if editing
   useEffect(() => {
@@ -211,6 +215,11 @@ export function FilterEditor({ filterId }: FilterEditorProps) {
   ]
 
   const logicOperators = ["AND", "OR"]
+
+  const handlePhaseTwo = (feature: string) => {
+    setPhaseTwoFeature(feature)
+    setShowPhaseTwo(true)
+  }
 
   return (
     <div className="flex-1 p-4 overflow-auto">
@@ -583,11 +592,11 @@ ORDER BY hostname;`
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow mb-6">
-        <h3 className="text-lg font-bold mb-3 pb-2 border-b">Save Options</h3>
+        <h3 className="text-lg font-bold mb-3 pb-2 border-b">Save Options - Phase 2</h3>
 
         <div className="mb-4">
           <label className="block font-bold mb-1">Filter Type</label>
-          <Select defaultValue="dynamic">
+          <Select defaultValue="dynamic" onValueChange={() => handlePhaseTwo("Filter Type")}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -600,7 +609,7 @@ ORDER BY hostname;`
 
         <div className="mb-4">
           <label className="block font-bold mb-1">Add to Custom Group</label>
-          <Select defaultValue="none">
+          <Select defaultValue="none" onValueChange={() => handlePhaseTwo("Custom Group")}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -616,7 +625,7 @@ ORDER BY hostname;`
 
         <div className="mb-4">
           <label className="block font-bold mb-1">Schedule Auto-refresh</label>
-          <Select defaultValue="manual">
+          <Select defaultValue="manual" onValueChange={() => handlePhaseTwo("Auto-refresh")}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -630,7 +639,11 @@ ORDER BY hostname;`
         </div>
 
         <div className="flex gap-2 justify-end">
-          {isEditing && <Button variant="destructive">Delete Filter</Button>}
+          {isEditing && (
+            <Button variant="destructive" onClick={() => handlePhaseTwo("Delete Filter")}>
+              Delete Filter
+            </Button>
+          )}
           <Button variant="outline" onClick={() => router.push("/")}>
             Cancel
           </Button>
@@ -649,6 +662,7 @@ ORDER BY hostname;`
           ))}
         </div>
       </div>
+      <PhaseTwoModal isOpen={showPhaseTwo} onClose={() => setShowPhaseTwo(false)} featureName={phaseTwoFeature} />
     </div>
   )
 }

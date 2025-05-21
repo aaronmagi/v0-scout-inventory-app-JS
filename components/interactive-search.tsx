@@ -368,13 +368,57 @@ export function InteractiveSearch({ onSearch }: InteractiveSearchProps) {
     setInputValue(value)
     setIsPopoverOpen(false)
 
-    // Add the token after selection
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.value = value
-        addToken()
+    // Add the token immediately after selection
+    const newToken: Token = {
+      id: Date.now().toString(),
+      type: currentStep,
+      value: value.trim(),
+    }
+
+    setTokens([...tokens, newToken])
+
+    // Determine the next step
+    if (currentStep === "field") {
+      const field = searchFields.find((f) => f.name === value.trim()) || null
+      setSelectedField(field)
+      setCurrentStep("operator")
+      // Force the popover to open for operator selection
+      setTimeout(() => setIsPopoverOpen(true), 0)
+    } else if (currentStep === "operator") {
+      setSelectedOperator(value.trim())
+      if (value === "is empty" || value === "is not empty") {
+        // Skip value step for operators that don't need values
+        setCurrentStep("logic")
+      } else {
+        setCurrentStep("value")
       }
-    }, 0)
+    } else if (currentStep === "value") {
+      setCurrentStep("logic")
+      // Force the popover to open for logic selection
+      setTimeout(() => setIsPopoverOpen(true), 0)
+    } else if (currentStep === "logic") {
+      if (value.toLowerCase() === "order by") {
+        setCurrentStep("orderBy")
+        setHasOrderBy(true)
+      } else {
+        setCurrentStep("field")
+        setSelectedField(null)
+        setSelectedOperator(null)
+        setSelectedOperatorRequiresValue(true)
+      }
+      // Force the popover to open for next selection
+      setTimeout(() => setIsPopoverOpen(true), 0)
+    } else if (currentStep === "orderBy") {
+      setCurrentStep("orderDirection")
+      // Force the popover to open for order direction selection
+      setTimeout(() => setIsPopoverOpen(true), 0)
+    } else if (currentStep === "orderDirection") {
+      // After order direction, we're done
+      setCurrentStep("field")
+      setSelectedField(null)
+      setSelectedOperator(null)
+      setSelectedOperatorRequiresValue(true)
+    }
   }
 
   // Get suggestions based on the current step

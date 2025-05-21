@@ -74,58 +74,49 @@ export function Sidebar() {
               {isServersOpen && (
                 <ul className="pl-4 mt-1">
                   <li>
-                    <Link
-                      href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
-                    >
-                      <Server className="mr-2 h-4 w-4" />
-                      <span>All Servers</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/hci" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
+                    <button
+                      onClick={() => showPhaseTwo("HCI Appliances")}
+                      className="flex items-center p-2 rounded-md hover:bg-[#B00058] w-full text-left"
                     >
                       <Boxes className="mr-2 h-4 w-4" />
                       <span>HCI Appliances</span>
-                    </Link>
+                    </button>
                   </li>
                   <li>
-                    <Link
-                      href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/hypervisor" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
+                    <button
+                      onClick={() => showPhaseTwo("Hypervisor Systems")}
+                      className="flex items-center p-2 rounded-md hover:bg-[#B00058] w-full text-left"
                     >
                       <Laptop className="mr-2 h-4 w-4" />
                       <span>Hypervisor Systems</span>
-                    </Link>
+                    </button>
                   </li>
                   <li>
-                    <Link
-                      href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/modular" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
+                    <button
+                      onClick={() => showPhaseTwo("Modular Systems")}
+                      className="flex items-center p-2 rounded-md hover:bg-[#B00058] w-full text-left"
                     >
                       <MonitorSmartphone className="mr-2 h-4 w-4" />
                       <span>Modular Systems</span>
-                    </Link>
+                    </button>
                   </li>
                   <li>
-                    <Link
-                      href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/network" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
+                    <button
+                      onClick={() => showPhaseTwo("Network Devices")}
+                      className="flex items-center p-2 rounded-md hover:bg-[#B00058] w-full text-left"
                     >
                       <Router className="mr-2 h-4 w-4" />
                       <span>Network Devices</span>
-                    </Link>
+                    </button>
                   </li>
                   <li>
-                    <Link
-                      href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/pdu" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
+                    <button
+                      onClick={() => showPhaseTwo("PDU Devices")}
+                      className="flex items-center p-2 rounded-md hover:bg-[#B00058] w-full text-left"
                     >
                       <Power className="mr-2 h-4 w-4" />
                       <span>PDU Devices</span>
-                    </Link>
+                    </button>
                   </li>
                   <li>
                     <Link
@@ -137,22 +128,22 @@ export function Sidebar() {
                     </Link>
                   </li>
                   <li>
-                    <Link
-                      href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/storage" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
+                    <button
+                      onClick={() => showPhaseTwo("Storage Devices")}
+                      className="flex items-center p-2 rounded-md hover:bg-[#B00058] w-full text-left"
                     >
                       <HardDrive className="mr-2 h-4 w-4" />
                       <span>Storage Devices</span>
-                    </Link>
+                    </button>
                   </li>
                   <li>
-                    <Link
-                      href="/"
-                      className={`flex items-center p-2 rounded-md ${pathname === "/servers/ups" ? "bg-[#B00058]" : "hover:bg-[#B00058]"}`}
+                    <button
+                      onClick={() => showPhaseTwo("UPS Devices")}
+                      className="flex items-center p-2 rounded-md hover:bg-[#B00058] w-full text-left"
                     >
                       <BatteryCharging className="mr-2 h-4 w-4" />
                       <span>UPS Devices</span>
-                    </Link>
+                    </button>
                   </li>
                 </ul>
               )}

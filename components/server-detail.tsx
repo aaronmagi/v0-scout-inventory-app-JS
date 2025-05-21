@@ -122,7 +122,7 @@ export function ServerDetail({ server }: ServerDetailProps) {
                   <Table>
                     <TableBody>
                       <TableRow>
-                        <TableCell className="font-medium">Name</TableCell>
+                        <TableCell className="font-medium">System Name</TableCell>
                         <TableCell>{server.name}</TableCell>
                       </TableRow>
                       <TableRow>
@@ -142,7 +142,11 @@ export function ServerDetail({ server }: ServerDetailProps) {
                         <TableCell>{server.type}</TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell className="font-medium">Status</TableCell>
+                        <TableCell className="font-medium">Service Tag</TableCell>
+                        <TableCell>{server.identifier}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">System Status</TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(server.status)}>{getStatusLabel(server.status)}</Badge>
                         </TableCell>
@@ -177,6 +181,18 @@ export function ServerDetail({ server }: ServerDetailProps) {
                       <TableRow>
                         <TableCell className="font-medium">Purchase Date</TableCell>
                         <TableCell>{server.purchaseDate || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Managed by Server</TableCell>
+                        <TableCell>{server.managedByServer || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Mapped Application</TableCell>
+                        <TableCell>{server.mappedApplicationService || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Managed by Group</TableCell>
+                        <TableCell>{server.managedByGroup || "N/A"}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
@@ -228,6 +244,14 @@ export function ServerDetail({ server }: ServerDetailProps) {
                         <TableCell>{server.summary.lastUpdated}</TableCell>
                       </TableRow>
                     )}
+                    <TableRow>
+                      <TableCell className="font-medium">Most Recent Discovery (Redfish)</TableCell>
+                      <TableCell>{server.summary.mostRecentDiscoveryRedfish || "N/A"}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Most Recent Discovery (ServiceNow)</TableCell>
+                      <TableCell>{server.summary.mostRecentDiscoveryServiceNow || "N/A"}</TableCell>
+                    </TableRow>
                   </TableBody>
                 </Table>
               </CardContent>
@@ -299,6 +323,7 @@ export function ServerDetail({ server }: ServerDetailProps) {
                       <TableRow>
                         <TableHead>Location</TableHead>
                         <TableHead>Capacity</TableHead>
+                        <TableHead>Manufacturer</TableHead>
                         <TableHead>Type</TableHead>
                         <TableHead>Speed</TableHead>
                         <TableHead>Status</TableHead>
@@ -309,6 +334,7 @@ export function ServerDetail({ server }: ServerDetailProps) {
                         <TableRow key={index}>
                           <TableCell>{mem.location}</TableCell>
                           <TableCell>{mem.capacity}</TableCell>
+                          <TableCell>{mem.manufacturer}</TableCell>
                           <TableCell>{mem.type}</TableCell>
                           <TableCell>{mem.speed}</TableCell>
                           <TableCell>{mem.status}</TableCell>
@@ -371,6 +397,7 @@ export function ServerDetail({ server }: ServerDetailProps) {
                         <TableHead>Model</TableHead>
                         <TableHead>Capacity</TableHead>
                         <TableHead>Interface</TableHead>
+                        <TableHead>Firmware</TableHead>
                         <TableHead>Status</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -382,6 +409,7 @@ export function ServerDetail({ server }: ServerDetailProps) {
                           <TableCell>{storage.model}</TableCell>
                           <TableCell>{storage.capacity}</TableCell>
                           <TableCell>{storage.interface}</TableCell>
+                          <TableCell>{storage.firmwareVersion || "N/A"}</TableCell>
                           <TableCell>{storage.status}</TableCell>
                         </TableRow>
                       ))}
@@ -496,8 +524,9 @@ export function ServerDetail({ server }: ServerDetailProps) {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Type</TableHead>
+                        <TableHead>PSU Name</TableHead>
+                        <TableHead>Serial Number</TableHead>
+                        <TableHead>Firmware Version</TableHead>
                         <TableHead>Capacity</TableHead>
                         <TableHead>Efficiency</TableHead>
                         <TableHead>Status</TableHead>
@@ -506,8 +535,9 @@ export function ServerDetail({ server }: ServerDetailProps) {
                     <TableBody>
                       {server.power.map((psu, index) => (
                         <TableRow key={index}>
-                          <TableCell>{psu.id}</TableCell>
-                          <TableCell>{psu.type}</TableCell>
+                          <TableCell>{psu.name}</TableCell>
+                          <TableCell>{psu.serialNumber}</TableCell>
+                          <TableCell>{psu.firmwareVersion}</TableCell>
                           <TableCell>{psu.capacity}</TableCell>
                           <TableCell>{psu.efficiency || "N/A"}</TableCell>
                           <TableCell>{psu.status}</TableCell>

@@ -37,9 +37,13 @@ export interface Server {
   network?: NetworkInfo[]
   power?: PowerInfo[]
   system?: SystemInfo
+  managedByServer?: string
+  mappedApplicationService?: string
+  managedByGroup?: string
   [key: string]: any
 }
 
+// Update the ServerSummary interface to include the new fields
 export interface ServerSummary {
   serialNumber: string
   manufacturer: string
@@ -48,34 +52,52 @@ export interface ServerSummary {
   assetTag?: string
   biosVersion?: string
   lastUpdated?: string
+  mostRecentDiscoveryRedfish?: string
+  mostRecentDiscoveryServiceNow?: string
 }
 
+// Update the ProcessorInfo interface
 export interface ProcessorInfo {
   id: string
   model: string
-  manufacturer: string
+  manufacturer: string // This will be consistent across all processors in a server
   cores: number
   threads: number
   speed: string
   status: string
 }
 
+// Update the MemoryInfo interface to include manufacturer
 export interface MemoryInfo {
   id: string
   location: string
   capacity: string
+  manufacturer: string // Added manufacturer
   type: string
   speed: string
   status: string
 }
 
+// Update the StorageInfo interface to include firmware
 export interface StorageInfo {
   id: string
   type: string
   model: string
   capacity: string
   interface: string
+  firmwareVersion?: string // Added firmware version
   status: string
+}
+
+// Update the PowerInfo interface
+export interface PowerInfo {
+  id: string
+  name: string // Changed from type to name
+  serialNumber: string // Added serial number
+  firmwareVersion: string // Added firmware version
+  capacity: string
+  status: string
+  efficiency?: string
 }
 
 export interface NetworkInfo {
@@ -85,14 +107,6 @@ export interface NetworkInfo {
   speed: string
   status: string
   ipAddresses?: string[]
-}
-
-export interface PowerInfo {
-  id: string
-  type: string
-  capacity: string
-  status: string
-  efficiency?: string
 }
 
 export interface SystemInfo {
@@ -105,7 +119,7 @@ export interface SystemInfo {
   users?: number
 }
 
-// Update the generateAdditionalServers function to include filter-related properties
+// Update the generateAdditionalServers function to include the new fields
 const generateAdditionalServers = (count: number): Server[] => {
   const servers: Server[] = []
   const models = [
@@ -126,6 +140,10 @@ const generateAdditionalServers = (count: number): Server[] => {
   const powerStates = ["On", "Off", "PoweringOn", "PoweringOff"]
   const bootStatuses = ["OK", "Failed", "Degraded", "Unknown"]
   const firmwareVersions = ["2.40", "2.41", "2.42", "2.30", "2.20", "3.00"]
+  const memoryManufacturers = ["Samsung", "Micron", "Hynix", "Kingston", "Crucial"]
+  const managedByServers = ["mgmt-server-01", "mgmt-server-02", "mgmt-server-03", null]
+  const mappedApplications = ["ERP System", "CRM System", "Database Cluster", "Web Server", null]
+  const managedByGroups = ["IT Operations", "Database Team", "Network Team", "Security Team", null]
 
   // Generate random date within a range
   const randomDate = (start: Date, end: Date) => {
@@ -179,7 +197,15 @@ const generateAdditionalServers = (count: number): Server[] => {
       warrantyEndDate.setFullYear(now.getFullYear() - 1)
     }
 
-    servers.push({
+    // Choose a random managed by server, application, and group
+    const managedByServerIndex = Math.floor(Math.random() * managedByServers.length)
+    const mappedApplicationIndex = Math.floor(Math.random() * mappedApplications.length)
+    const managedByGroupIndex = Math.floor(Math.random() * managedByGroups.length)
+
+    // Choose processor manufacturer based on model (Dell models use AMD, HP models use Intel)
+    const processorManufacturer = isDell ? "AMD" : "Intel"
+
+    const server: Server = {
       id: i.toString(),
       ipAddress: `10.10.${ipOctet3}.${ipOctet4}`,
       name: isDell
@@ -212,7 +238,12 @@ const generateAdditionalServers = (count: number): Server[] => {
       lockdownMode: Math.random() > 0.4, // 60% chance of being in lockdown mode
       accountName: Math.random() < 0.05 ? "root" : `user${i}`,
       accountEnabled: Math.random() > 0.2, // 80% chance of being enabled
-    })
+      managedByServer: managedByServers[managedByServerIndex],
+      mappedApplicationService: mappedApplications[mappedApplicationIndex],
+      managedByGroup: managedByGroups[managedByGroupIndex],
+    }
+
+    servers.push(server)
   }
 
   return servers
@@ -890,6 +921,25 @@ export const serverData: Server[] = [
 
 // Add detailed information to the mock data
 serverData.forEach((server) => {
+  // Choose processor manufacturer based on model (Dell models use AMD, HP models use Intel)
+  const isDell = server.model.includes("PowerEdge")
+  const processorManufacturer = isDell ? "AMD" : "Intel"
+
+  // Add management information if not present
+  if (!server.managedByServer) {
+    server.managedByServer = ["mgmt-server-01", "mgmt-server-02", "mgmt-server-03", null][Math.floor(Math.random() * 4)]
+  }
+  if (!server.mappedApplicationService) {
+    server.mappedApplicationService = ["ERP System", "CRM System", "Database Cluster", "Web Server", null][
+      Math.floor(Math.random() * 5)
+    ]
+  }
+  if (!server.managedByGroup) {
+    server.managedByGroup = ["IT Operations", "Database Team", "Network Team", "Security Team", null][
+      Math.floor(Math.random() * 5)
+    ]
+  }
+
   // Add mock detailed information for each server
   server.summary = {
     serialNumber: `SN-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
@@ -899,32 +949,43 @@ serverData.forEach((server) => {
     assetTag: `ASSET-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
     biosVersion: `${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 100)}`,
     lastUpdated: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString(),
+    mostRecentDiscoveryRedfish: new Date(
+      Date.now() - Math.floor(Math.random() * 14) * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+    mostRecentDiscoveryServiceNow: new Date(
+      Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000,
+    ).toISOString(),
   }
 
-  // Add 1-4 processors
+  // Add 1-4 processors with consistent manufacturer
   const processorCount = Math.floor(Math.random() * 4) + 1
   server.processors = Array.from({ length: processorCount }, (_, i) => ({
     id: `CPU-${i}`,
-    model: ["Intel Xeon Gold", "AMD EPYC", "Intel Xeon Silver", "Intel Xeon Platinum"][Math.floor(Math.random() * 4)],
-    manufacturer: ["Intel", "AMD"][Math.floor(Math.random() * 2)],
+    model:
+      processorManufacturer === "Intel"
+        ? ["Intel Xeon Gold", "Intel Xeon Silver", "Intel Xeon Platinum"][Math.floor(Math.random() * 3)]
+        : ["AMD EPYC 7002", "AMD EPYC 7003", "AMD EPYC 9004"][Math.floor(Math.random() * 3)],
+    manufacturer: processorManufacturer,
     cores: [8, 16, 24, 32, 64][Math.floor(Math.random() * 5)],
     threads: [16, 32, 48, 64, 128][Math.floor(Math.random() * 5)],
     speed: `${Math.floor(Math.random() * 10) + 2}.${Math.floor(Math.random() * 10)}GHz`,
     status: ["OK", "Warning", "Critical", "Unknown"][Math.floor(Math.random() * 4)],
   }))
 
-  // Add 2-16 memory modules
+  // Add 2-16 memory modules with manufacturer
   const memoryCount = Math.floor(Math.random() * 14) + 2
+  const memoryManufacturers = ["Samsung", "Micron", "Hynix", "Kingston", "Crucial"]
   server.memory = Array.from({ length: memoryCount }, (_, i) => ({
     id: `DIMM-${i}`,
     location: `DIMM ${String.fromCharCode(65 + i)}`,
     capacity: `${[8, 16, 32, 64, 128][Math.floor(Math.random() * 5)]}GB`,
+    manufacturer: memoryManufacturers[Math.floor(Math.random() * memoryManufacturers.length)],
     type: ["DDR4", "DDR5"][Math.floor(Math.random() * 2)],
     speed: `${[2400, 2666, 3200, 4800, 5600][Math.floor(Math.random() * 5)]}MHz`,
     status: ["OK", "Warning", "Critical", "Unknown"][Math.floor(Math.random() * 4)],
   }))
 
-  // Add 1-8 storage devices
+  // Add 1-8 storage devices with firmware version
   const storageCount = Math.floor(Math.random() * 8) + 1
   server.storage = Array.from({ length: storageCount }, (_, i) => ({
     id: `DISK-${i}`,
@@ -932,6 +993,7 @@ serverData.forEach((server) => {
     model: ["Samsung", "Intel", "Seagate", "WD", "Micron"][Math.floor(Math.random() * 5)],
     capacity: `${[240, 480, 960, 1920, 3840, 7680][Math.floor(Math.random() * 6)]}GB`,
     interface: ["SATA", "SAS", "PCIe"][Math.floor(Math.random() * 3)],
+    firmwareVersion: `${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 100)}`,
     status: ["OK", "Warning", "Critical", "Unknown"][Math.floor(Math.random() * 4)],
   }))
 
@@ -954,11 +1016,13 @@ serverData.forEach((server) => {
     ),
   }))
 
-  // Add 1-2 power supplies
+  // Add 1-2 power supplies with name, serial number, and firmware version
   const powerCount = Math.floor(Math.random() * 2) + 1
   server.power = Array.from({ length: powerCount }, (_, i) => ({
     id: `PSU-${i}`,
-    type: ["AC", "DC"][Math.floor(Math.random() * 2)],
+    name: `Power Supply ${i + 1}`,
+    serialNumber: `PSU-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+    firmwareVersion: `${Math.floor(Math.random() * 5)}.${Math.floor(Math.random() * 100)}`,
     capacity: `${[750, 1000, 1200, 1500, 2000][Math.floor(Math.random() * 5)]}W`,
     status: ["OK", "Warning", "Critical", "Unknown"][Math.floor(Math.random() * 4)],
     efficiency: ["80 PLUS", "80 PLUS Bronze", "80 PLUS Silver", "80 PLUS Gold", "80 PLUS Platinum", "80 PLUS Titanium"][
@@ -990,6 +1054,14 @@ export function getServerById(id: string): Server | undefined {
 }
 
 export interface FilterRule {
+  id: string
+  field: string
+  operator: string
+  value: string
+  logic: string
+}
+
+export interface Filter {
   id: string
   field: string
   operator: string
