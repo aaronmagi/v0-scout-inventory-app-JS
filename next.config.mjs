@@ -9,7 +9,19 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
-  }
+  },
+  webpack: (config, { isServer }) => {
+    // Ignore Grafana modules
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@grafana/data': false,
+      '@grafana/runtime': false,
+      '@grafana/ui': false,
+      '@emotion/css': false
+    };
+    
+    return config;
+  },
 }
 
 export default nextConfig
