@@ -1,7 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
-import { CustomSidebar } from "@/components/custom-sidebar"
+import { Sidebar } from "@/components/sidebar"
 
 export const metadata: Metadata = {
   title: "v0 App",
@@ -18,7 +18,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <div className="flex h-screen">
-          <CustomSidebar />
+          <Sidebar />
           <div className="flex-1 flex flex-col overflow-hidden">{children}</div>
         </div>
       </body>
