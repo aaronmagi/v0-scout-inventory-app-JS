@@ -29,7 +29,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { InteractiveSearch } from "@/components/interactive-search"
 import { toast } from "@/components/ui/use-toast"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { serverData as servers, filterData } from "@/lib/data"
@@ -54,6 +53,10 @@ interface ServerType {
   bootStatus?: string
   firmwareVersion?: string
   [key: string]: any
+  system?: {
+    operatingSystem?: string
+    osVersion?: string
+  }
 }
 
 interface FilterType {
@@ -77,7 +80,6 @@ export function Dashboard() {
   const [totalPages, setTotalPages] = useState(Math.ceil(servers.length / 10))
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false)
   const [filters, setFilters] = useState<FilterType[]>(filterData)
   const [selectedFilter, setSelectedFilter] = useState("all-servers")
 
@@ -172,6 +174,13 @@ export function Dashboard() {
           const valueA = statusOrder[a.status] ?? 999
           const valueB = statusOrder[b.status] ?? 999
           return sortDirection === "asc" ? valueA - valueB : valueB - valueA
+        }
+
+        // Special handling for operatingSystem which is nested
+        if (sortColumn === "operatingSystem") {
+          const valueA = a.system?.operatingSystem || ""
+          const valueB = b.system?.operatingSystem || ""
+          return sortDirection === "asc" ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA)
         }
 
         const valueA = a[sortColumn] || ""
@@ -317,6 +326,17 @@ export function Dashboard() {
     }
   }
 
+  const columns = [
+    { id: "status", header: "Status" },
+    { id: "ipAddress", header: "IP Address" },
+    { id: "name", header: "Name" },
+    { id: "identifier", header: "Identifier" },
+    { id: "model", header: "Model" },
+    { id: "type", header: "Type" },
+    { id: "operatingSystem", header: "Operating System" },
+    { id: "actions", header: "Actions" },
+  ]
+
   return (
     <main className="flex-1 p-4 overflow-auto">
       <div className="flex justify-between items-center mb-4">
@@ -386,16 +406,7 @@ export function Dashboard() {
           onChange={(e) => handleSearch(e.target.value)}
           className="max-w-sm"
         />
-        <Button variant="outline" onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}>
-          {showAdvancedSearch ? "Hide Advanced Search" : "Advanced Search"}
-        </Button>
       </div>
-
-      {showAdvancedSearch && (
-        <div className="mb-6 bg-white p-4 rounded-lg shadow">
-          <InteractiveSearch onSearch={handleSearch} />
-        </div>
-      )}
 
       {/* Saved Filters Section */}
       <div className="bg-white rounded-lg shadow mb-6 p-4">
@@ -460,8 +471,11 @@ export function Dashboard() {
                 <TableHead className="cursor-pointer" onClick={() => handleSort("identifier")}>
                   Identifier {renderSortIndicator("identifier")}
                 </TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("managedState")}>
+                {/* <TableHead className="cursor-pointer" onClick={() => handleSort("managedState")}>
                   Managed State {renderSortIndicator("managedState")}
+                </TableHead> */}
+                <TableHead className="cursor-pointer" onClick={() => handleSort("operatingSystem")}>
+                  Operating System {renderSortIndicator("operatingSystem")}
                 </TableHead>
                 <TableHead className="w-[80px]">Actions</TableHead>
               </TableRow>
@@ -490,7 +504,12 @@ export function Dashboard() {
                     <TableCell>{server.ipAddress}</TableCell>
                     <TableCell>{server.model}</TableCell>
                     <TableCell>{server.identifier}</TableCell>
-                    <TableCell>{server.managedState}</TableCell>
+                    {/* <TableCell>{server.managedState}</TableCell> */}
+                    <TableCell>
+                      {server.system?.operatingSystem
+                        ? `${server.system.operatingSystem}${server.system.osVersion ? ` (${server.system.osVersion})` : ""}`
+                        : "No OS"}
+                    </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

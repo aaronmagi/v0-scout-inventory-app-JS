@@ -1,637 +1,632 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ChevronLeft, Download } from "lucide-react"
-import { toast } from "@/components/ui/use-toast"
-import { downloadCSV, serversToCSV } from "@/lib/csv-utils"
-import type { Server } from "@/lib/data"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { formatDate } from "@/lib/utils"
+import { ArrowLeft, Download } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 interface ServerDetailProps {
-  server: Server
+  server: any
 }
 
 export function ServerDetail({ server }: ServerDetailProps) {
-  const [activeTab, setActiveTab] = useState("overview")
+  const [activeTab, setActiveTab] = useState("summary")
 
-  if (!server) {
-    return <div>Server not found</div>
-  }
-
-  const handleExportCSV = () => {
+  const handleExportServer = async () => {
     try {
-      const csvContent = serversToCSV([server])
-      downloadCSV(csvContent, `server-${server.id}-${new Date().toISOString().slice(0, 10)}.csv`)
-      toast({
-        title: "Export Successful",
-        description: `Server details exported to CSV.`,
-      })
-    } catch (err) {
-      console.error("Error exporting CSV:", err)
-      toast({
-        title: "Export Failed",
-        description: "There was an error exporting the data.",
-        variant: "destructive",
-      })
+      const response = await fetch(`/api/export/servers/${server.id}`)
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.style.display = "none"
+        a.href = url
+        a.download = `server-${server.name}-${new Date().toISOString().split("T")[0]}.csv`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+      }
+    } catch (error) {
+      console.error("Error exporting server:", error)
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "critical":
-        return "bg-red-500 text-white"
-      case "warning":
-        return "bg-yellow-500 text-white"
-      case "normal":
-        return "bg-green-500 text-white"
-      default:
-        return "bg-gray-500 text-white"
-    }
+  // Calculate totals for memory
+  const calculateMemoryTotal = () => {
+    if (!server.memory || server.memory.length === 0) return "0 GB"
+    const totalGB = server.memory.reduce((total: number, mem: any) => {
+      const capacity = Number.parseInt(mem.capacity.replace(/[^\d]/g, "")) || 0
+      return total + capacity
+    }, 0)
+    return `${totalGB} GB`
   }
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "critical":
-        return "Critical"
-      case "warning":
-        return "Warning"
-      case "normal":
-        return "OK"
-      case "unknown":
-      default:
-        return "Unknown"
-    }
+  // Calculate totals for storage
+  const calculateStorageTotal = () => {
+    if (!server.storage || server.storage.length === 0) return "0 GB"
+    const totalGB = server.storage.reduce((total: number, storage: any) => {
+      const capacity = Number.parseInt(storage.capacity.replace(/[^\d]/g, "")) || 0
+      return total + capacity
+    }, 0)
+    return totalGB >= 1000 ? `${(totalGB / 1000).toFixed(1)} TB` : `${totalGB} GB`
   }
+
+  // Calculate processor totals
+  const calculateProcessorTotals = () => {
+    if (!server.processors || server.processors.length === 0) return { totalCores: 0, totalThreads: 0 }
+    const totalCores = server.processors.reduce((total: number, proc: any) => total + (proc.cores || 0), 0)
+    const totalThreads = server.processors.reduce((total: number, proc: any) => total + (proc.threads || 0), 0)
+    return { totalCores, totalThreads }
+  }
+
+  const processorTotals = calculateProcessorTotals()
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center mb-4">
-        <Link href="/" className="flex items-center text-blue-600 hover:text-blue-800">
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Back to Dashboard
-        </Link>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <Link href="/">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to All Servers
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold">System Information - {server.name}</h1>
+        </div>
+        <Button variant="outline" onClick={handleExportServer}>
+          <Download className="h-4 w-4 mr-2" />
+          Export Server Details
+        </Button>
       </div>
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{server.name}</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge className={getStatusColor(server.status)}>{getStatusLabel(server.status)}</Badge>
-            <span className="text-sm text-gray-500">{server.ipAddress}</span>
-            <span className="text-sm text-gray-500">ID: {server.identifier}</span>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportCSV}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-7 md:w-[840px]">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="summary">Summary</TabsTrigger>
           <TabsTrigger value="processors">Processors</TabsTrigger>
           <TabsTrigger value="memory">Memory</TabsTrigger>
           <TabsTrigger value="storage">Storage</TabsTrigger>
           <TabsTrigger value="network">Network</TabsTrigger>
           <TabsTrigger value="power">Power</TabsTrigger>
-          <TabsTrigger value="system">System</TabsTrigger>
+          <TabsTrigger value="system">System Info</TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Server Overview</CardTitle>
-              <CardDescription>Basic information about this server</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium mb-2">General Information</h3>
-                  <Table>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell className="font-medium">System Name</TableCell>
-                        <TableCell>{server.name}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">IP Address</TableCell>
-                        <TableCell>{server.ipAddress}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Identifier</TableCell>
-                        <TableCell>{server.identifier}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Model</TableCell>
-                        <TableCell>{server.model}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Type</TableCell>
-                        <TableCell>{server.type}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Service Tag</TableCell>
-                        <TableCell>{server.identifier}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">System Status</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(server.status)}>{getStatusLabel(server.status)}</Badge>
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-                <div>
-                  <h3 className="font-medium mb-2">Management Information</h3>
-                  <Table>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell className="font-medium">Managed State</TableCell>
-                        <TableCell>{server.managedState}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Management Controller</TableCell>
-                        <TableCell>{server.managementController || "N/A"}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Lifecycle Status</TableCell>
-                        <TableCell>{server.lifecycleStatus || "N/A"}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Warranty End Date</TableCell>
-                        <TableCell>{server.warrantyEndDate || "N/A"}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Manufacture Date</TableCell>
-                        <TableCell>{server.manufactureDate || "N/A"}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Purchase Date</TableCell>
-                        <TableCell>{server.purchaseDate || "N/A"}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Managed by Server</TableCell>
-                        <TableCell>{server.managedByServer || "N/A"}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Mapped Application</TableCell>
-                        <TableCell>{server.mappedApplicationService || "N/A"}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Managed by Group</TableCell>
-                        <TableCell>{server.managedByGroup || "N/A"}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {server.summary && (
+        <TabsContent value="summary">
+          <div className="space-y-6">
+            {/* Server Overview */}
             <Card>
               <CardHeader>
-                <CardTitle>Summary Information</CardTitle>
-                <CardDescription>Additional server details</CardDescription>
+                <CardTitle>Server Overview</CardTitle>
+                <p className="text-sm text-muted-foreground">Basic information about this server</p>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">Serial Number</TableCell>
-                      <TableCell>{server.summary.serialNumber}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Manufacturer</TableCell>
-                      <TableCell>{server.summary.manufacturer}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Location</TableCell>
-                      <TableCell>{server.summary.location}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Rack Position</TableCell>
-                      <TableCell>{server.summary.rackPosition}</TableCell>
-                    </TableRow>
-                    {server.summary.assetTag && (
-                      <TableRow>
-                        <TableCell className="font-medium">Asset Tag</TableCell>
-                        <TableCell>{server.summary.assetTag}</TableCell>
-                      </TableRow>
-                    )}
-                    {server.summary.biosVersion && (
-                      <TableRow>
-                        <TableCell className="font-medium">BIOS Version</TableCell>
-                        <TableCell>{server.summary.biosVersion}</TableCell>
-                      </TableRow>
-                    )}
-                    {server.summary.lastUpdated && (
-                      <TableRow>
-                        <TableCell className="font-medium">Last Updated</TableCell>
-                        <TableCell>{server.summary.lastUpdated}</TableCell>
-                      </TableRow>
-                    )}
-                    <TableRow>
-                      <TableCell className="font-medium">Most Recent Discovery (Redfish)</TableCell>
-                      <TableCell>{server.summary.mostRecentDiscoveryRedfish || "N/A"}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Most Recent Discovery (ServiceNow)</TableCell>
-                      <TableCell>{server.summary.mostRecentDiscoveryServiceNow || "N/A"}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Processors Tab */}
-        <TabsContent value="processors" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Processor Information</CardTitle>
-              <CardDescription>CPU details and specifications</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {server.processors && server.processors.length > 0 ? (
-                server.processors.map((processor, index) => (
-                  <div key={index} className="mb-6 last:mb-0">
-                    <h3 className="font-medium mb-2">Processor {index + 1}</h3>
+                <div className="space-y-6">
+                  {/* General Information */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">General Information</h3>
                     <Table>
                       <TableBody>
+                        <TableRow>
+                          <TableCell className="font-medium w-1/3">System Name</TableCell>
+                          <TableCell>{server.name}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">IP Address</TableCell>
+                          <TableCell>{server.ipAddress}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Identifier</TableCell>
+                          <TableCell>{server.identifier}</TableCell>
+                        </TableRow>
                         <TableRow>
                           <TableCell className="font-medium">Model</TableCell>
-                          <TableCell>{processor.model}</TableCell>
+                          <TableCell>{server.model}</TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium">Manufacturer</TableCell>
-                          <TableCell>{processor.manufacturer}</TableCell>
+                          <TableCell className="font-medium">Type</TableCell>
+                          <TableCell>{server.type || "Compute"}</TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium">Cores</TableCell>
-                          <TableCell>{processor.cores}</TableCell>
+                          <TableCell className="font-medium">Service Tag</TableCell>
+                          <TableCell>{server.identifier}</TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium">Threads</TableCell>
-                          <TableCell>{processor.threads}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium">Speed</TableCell>
-                          <TableCell>{processor.speed}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium">Status</TableCell>
-                          <TableCell>{processor.status}</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-4">No processor information available</div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Memory Tab */}
-        <TabsContent value="memory" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Memory Information</CardTitle>
-              <CardDescription>RAM modules and configuration</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {server.memory && server.memory.length > 0 ? (
-                <div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Capacity</TableHead>
-                        <TableHead>Manufacturer</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Speed</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {server.memory.map((mem, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{mem.location}</TableCell>
-                          <TableCell>{mem.capacity}</TableCell>
-                          <TableCell>{mem.manufacturer}</TableCell>
-                          <TableCell>{mem.type}</TableCell>
-                          <TableCell>{mem.speed}</TableCell>
-                          <TableCell>{mem.status}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-
-                  <div className="mt-4">
-                    <h3 className="font-medium mb-2">Memory Summary</h3>
-                    <Table>
-                      <TableBody>
-                        <TableRow>
-                          <TableCell className="font-medium">Total Modules</TableCell>
-                          <TableCell>{server.memory.length}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium">Total Capacity</TableCell>
+                          <TableCell className="font-medium">System Status</TableCell>
                           <TableCell>
-                            {server.memory
-                              .reduce((total, mem) => {
-                                const capacityMatch = mem.capacity.match(/(\d+)(\w+)/)
-                                if (capacityMatch) {
-                                  const [, size, unit] = capacityMatch
-                                  const sizeNum = Number.parseInt(size)
-                                  return total + (unit.toLowerCase() === "gb" ? sizeNum : sizeNum / 1024)
-                                }
-                                return total
-                              }, 0)
-                              .toFixed(0)}{" "}
-                            GB
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`h-3 w-3 rounded-full ${
+                                  server.status === "critical"
+                                    ? "bg-red-500"
+                                    : server.status === "warning"
+                                      ? "bg-yellow-500"
+                                      : server.status === "normal"
+                                        ? "bg-green-500"
+                                        : "bg-gray-500"
+                                }`}
+                              ></div>
+                              {server.status === "normal"
+                                ? "OK"
+                                : server.status.charAt(0).toUpperCase() + server.status.slice(1)}
+                            </div>
                           </TableCell>
                         </TableRow>
                       </TableBody>
                     </Table>
                   </div>
-                </div>
-              ) : (
-                <div className="text-center py-4">No memory information available</div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {/* Storage Tab */}
-        <TabsContent value="storage" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Storage Information</CardTitle>
-              <CardDescription>Disk drives and storage devices</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {server.storage && server.storage.length > 0 ? (
-                <div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Model</TableHead>
-                        <TableHead>Capacity</TableHead>
-                        <TableHead>Interface</TableHead>
-                        <TableHead>Firmware</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {server.storage.map((storage, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{storage.id}</TableCell>
-                          <TableCell>{storage.type}</TableCell>
-                          <TableCell>{storage.model}</TableCell>
-                          <TableCell>{storage.capacity}</TableCell>
-                          <TableCell>{storage.interface}</TableCell>
-                          <TableCell>{storage.firmwareVersion || "N/A"}</TableCell>
-                          <TableCell>{storage.status}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-
-                  <div className="mt-4">
-                    <h3 className="font-medium mb-2">Storage Summary</h3>
+                  {/* Management Information */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Management Information</h3>
                     <Table>
                       <TableBody>
                         <TableRow>
-                          <TableCell className="font-medium">Total Devices</TableCell>
-                          <TableCell>{server.storage.length}</TableCell>
+                          <TableCell className="font-medium w-1/3">Managed State</TableCell>
+                          <TableCell>{server.managedState}</TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium">SSD Devices</TableCell>
-                          <TableCell>{server.storage.filter((s) => s.type === "SSD").length}</TableCell>
+                          <TableCell className="font-medium">Management Controller</TableCell>
+                          <TableCell>{server.managementController || "N/A"}</TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium">HDD Devices</TableCell>
-                          <TableCell>{server.storage.filter((s) => s.type === "HDD").length}</TableCell>
+                          <TableCell className="font-medium">Lifecycle Status</TableCell>
+                          <TableCell>
+                            <Badge variant={server.lifecycleStatus === "EOL" ? "destructive" : "default"}>
+                              {server.lifecycleStatus || "N/A"}
+                            </Badge>
+                          </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium">NVMe Devices</TableCell>
-                          <TableCell>{server.storage.filter((s) => s.type === "NVMe").length}</TableCell>
+                          <TableCell className="font-medium">Warranty End Date</TableCell>
+                          <TableCell>{server.warrantyEndDate ? formatDate(server.warrantyEndDate) : "N/A"}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Manufacture Date</TableCell>
+                          <TableCell>{server.manufactureDate ? formatDate(server.manufactureDate) : "N/A"}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Purchase Date</TableCell>
+                          <TableCell>{server.purchaseDate ? formatDate(server.purchaseDate) : "N/A"}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Managed by Server</TableCell>
+                          <TableCell>{server.managedByServer || "N/A"}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Mapped Application</TableCell>
+                          <TableCell>{server.mappedApplicationService || "N/A"}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">Managed by Group</TableCell>
+                          <TableCell>{server.managedByGroup || "N/A"}</TableCell>
                         </TableRow>
                       </TableBody>
                     </Table>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-4">No storage information available</div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* Summary Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Summary Information</CardTitle>
+                <p className="text-sm text-muted-foreground">Additional server details</p>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium w-1/3">Serial Number</TableCell>
+                      <TableCell>{server.summary?.serialNumber || "N/A"}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Manufacturer</TableCell>
+                      <TableCell>{server.summary?.manufacturer || "N/A"}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Location</TableCell>
+                      <TableCell>{server.summary?.location || "N/A"}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Rack Position</TableCell>
+                      <TableCell>{server.summary?.rackPosition || "N/A"}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Asset Tag</TableCell>
+                      <TableCell>{server.summary?.assetTag || "N/A"}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">BIOS Version</TableCell>
+                      <TableCell>{server.summary?.biosVersion || "N/A"}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Last Updated</TableCell>
+                      <TableCell>
+                        {server.summary?.lastUpdated ? formatDate(server.summary.lastUpdated) : "N/A"}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Most Recent Discovery (Redfish)</TableCell>
+                      <TableCell>
+                        {server.summary?.mostRecentDiscoveryRedfish
+                          ? formatDate(server.summary.mostRecentDiscoveryRedfish)
+                          : "N/A"}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Most Recent Discovery (ServiceNow)</TableCell>
+                      <TableCell>
+                        {server.summary?.mostRecentDiscoveryServiceNow
+                          ? formatDate(server.summary.mostRecentDiscoveryServiceNow)
+                          : "N/A"}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
-        {/* Network Tab */}
-        <TabsContent value="network" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Network Information</CardTitle>
-              <CardDescription>Network interfaces and configuration</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {server.network && server.network.length > 0 ? (
-                <div>
+        <TabsContent value="processors">
+          <div className="space-y-6">
+            {/* Processor Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Processor Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium w-1/3">Total Processors</TableCell>
+                      <TableCell>{server.processors?.length || 0}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Total Cores</TableCell>
+                      <TableCell>{processorTotals.totalCores}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Total Threads</TableCell>
+                      <TableCell>{processorTotals.totalThreads}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Processor Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Processor Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {server.processors && server.processors.length > 0 ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>MAC Address</TableHead>
-                        <TableHead>Type</TableHead>
+                        <TableHead>Processor</TableHead>
+                        <TableHead>Model</TableHead>
+                        <TableHead>Manufacturer</TableHead>
+                        <TableHead>Cores</TableHead>
+                        <TableHead>Threads</TableHead>
                         <TableHead>Speed</TableHead>
                         <TableHead>Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {server.network.map((nic, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{nic.id}</TableCell>
-                          <TableCell>{nic.macAddress}</TableCell>
-                          <TableCell>{nic.type}</TableCell>
-                          <TableCell>{nic.speed}</TableCell>
-                          <TableCell>{nic.status}</TableCell>
+                      {server.processors.map((processor: any, index: number) => (
+                        <TableRow key={processor.id}>
+                          <TableCell>CPU {index + 1}</TableCell>
+                          <TableCell>{processor.model}</TableCell>
+                          <TableCell>{processor.manufacturer}</TableCell>
+                          <TableCell>{processor.cores}</TableCell>
+                          <TableCell>{processor.threads}</TableCell>
+                          <TableCell>{processor.speed}</TableCell>
+                          <TableCell>
+                            <Badge variant={processor.status === "OK" ? "default" : "destructive"}>
+                              {processor.status}
+                            </Badge>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
-
-                  {server.network.some((nic) => nic.ipAddresses && nic.ipAddresses.length > 0) && (
-                    <div className="mt-4">
-                      <h3 className="font-medium mb-2">IP Addresses</h3>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Interface</TableHead>
-                            <TableHead>IP Addresses</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {server.network
-                            .filter((nic) => nic.ipAddresses && nic.ipAddresses.length > 0)
-                            .map((nic, index) => (
-                              <TableRow key={index}>
-                                <TableCell>{nic.id}</TableCell>
-                                <TableCell>{nic.ipAddresses?.join(", ")}</TableCell>
-                              </TableRow>
-                            ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-4">No network information available</div>
-              )}
-            </CardContent>
-          </Card>
+                ) : (
+                  <p className="text-gray-500 italic">No processor information available</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
-        {/* Power Tab */}
-        <TabsContent value="power" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Power Information</CardTitle>
-              <CardDescription>Power supply units and status</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {server.power && server.power.length > 0 ? (
-                <div>
+        <TabsContent value="memory">
+          <div className="space-y-6">
+            {/* Memory Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Memory Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium w-1/3">Total Memory Slots</TableCell>
+                      <TableCell>{server.memory?.length || 0}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Total Memory Capacity</TableCell>
+                      <TableCell>{calculateMemoryTotal()}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Memory Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Memory Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {server.memory && server.memory.length > 0 ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>PSU Name</TableHead>
-                        <TableHead>Serial Number</TableHead>
-                        <TableHead>Firmware Version</TableHead>
+                        <TableHead>Location</TableHead>
                         <TableHead>Capacity</TableHead>
-                        <TableHead>Efficiency</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Speed</TableHead>
+                        <TableHead>Manufacturer</TableHead>
                         <TableHead>Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {server.power.map((psu, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{psu.name}</TableCell>
-                          <TableCell>{psu.serialNumber}</TableCell>
-                          <TableCell>{psu.firmwareVersion}</TableCell>
-                          <TableCell>{psu.capacity}</TableCell>
-                          <TableCell>{psu.efficiency || "N/A"}</TableCell>
-                          <TableCell>{psu.status}</TableCell>
+                      {server.memory.map((mem: any) => (
+                        <TableRow key={mem.id}>
+                          <TableCell>{mem.location}</TableCell>
+                          <TableCell>{mem.capacity}</TableCell>
+                          <TableCell>{mem.type}</TableCell>
+                          <TableCell>{mem.speed}</TableCell>
+                          <TableCell>{mem.manufacturer}</TableCell>
+                          <TableCell>
+                            <Badge variant={mem.status === "OK" ? "default" : "destructive"}>{mem.status}</Badge>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
+                ) : (
+                  <p className="text-gray-500 italic">No memory information available</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
-                  <div className="mt-4">
-                    <h3 className="font-medium mb-2">Power Status</h3>
-                    <Table>
-                      <TableBody>
-                        <TableRow>
-                          <TableCell className="font-medium">Power State</TableCell>
-                          <TableCell>{server.powerState || "Unknown"}</TableCell>
+        <TabsContent value="storage">
+          <div className="space-y-6">
+            {/* Storage Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Storage Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium w-1/3">Total Storage Devices</TableCell>
+                      <TableCell>{server.storage?.length || 0}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Total Storage Capacity</TableCell>
+                      <TableCell>{calculateStorageTotal()}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Storage Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Storage Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {server.storage && server.storage.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Drive</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Model</TableHead>
+                        <TableHead>Capacity</TableHead>
+                        <TableHead>Protocol</TableHead>
+                        <TableHead>Firmware</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {server.storage.map((storage: any, index: number) => (
+                        <TableRow key={storage.id}>
+                          <TableCell>Drive {index + 1}</TableCell>
+                          <TableCell>{storage.type}</TableCell>
+                          <TableCell>{storage.model}</TableCell>
+                          <TableCell>{storage.capacity}</TableCell>
+                          <TableCell>{storage.protocol}</TableCell>
+                          <TableCell>{storage.firmwareVersion || "N/A"}</TableCell>
+                          <TableCell>
+                            <Badge variant={storage.status === "OK" ? "default" : "destructive"}>
+                              {storage.status}
+                            </Badge>
+                          </TableCell>
                         </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium">Boot Status</TableCell>
-                          <TableCell>{server.bootStatus || "Unknown"}</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-gray-500 italic">No storage information available</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="network">
+          <Card>
+            <CardHeader>
+              <CardTitle>Network</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {server.network && server.network.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Interface</TableHead>
+                      <TableHead>MAC Address</TableHead>
+                      <TableHead>IP Addresses</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Speed</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {server.network.map((nic: any, index: number) => (
+                      <TableRow key={nic.id}>
+                        <TableCell>NIC {index + 1}</TableCell>
+                        <TableCell className="font-mono text-sm">{nic.macAddress}</TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {nic.ipAddresses && nic.ipAddresses.length > 0 ? nic.ipAddresses.join(", ") : "N/A"}
+                        </TableCell>
+                        <TableCell>{nic.type}</TableCell>
+                        <TableCell>{nic.speed}</TableCell>
+                        <TableCell>
+                          <Badge variant={nic.status === "OK" ? "default" : "destructive"}>{nic.status}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               ) : (
-                <div className="text-center py-4">No power information available</div>
+                <p className="text-gray-500 italic">No network information available</p>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* System Tab */}
-        <TabsContent value="system" className="space-y-4">
+        <TabsContent value="power">
+          <Card>
+            <CardHeader>
+              <CardTitle>Power</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {server.power && server.power.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Power Supply</TableHead>
+                      <TableHead>Serial Number</TableHead>
+                      <TableHead>Firmware Version</TableHead>
+                      <TableHead>Capacity</TableHead>
+                      <TableHead>Efficiency</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {server.power.map((psu: any) => (
+                      <TableRow key={psu.id}>
+                        <TableCell>{psu.name}</TableCell>
+                        <TableCell className="font-mono text-sm">{psu.serialNumber}</TableCell>
+                        <TableCell>{psu.firmwareVersion}</TableCell>
+                        <TableCell>{psu.capacity}</TableCell>
+                        <TableCell>{psu.efficiency || "N/A"}</TableCell>
+                        <TableCell>
+                          <Badge variant={psu.status === "OK" ? "default" : "destructive"}>{psu.status}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="text-gray-500 italic">No power information available</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="system">
           <Card>
             <CardHeader>
               <CardTitle>System Information</CardTitle>
-              <CardDescription>Operating system and firmware details</CardDescription>
+              <p className="text-sm text-muted-foreground">Operating system and firmware details</p>
             </CardHeader>
             <CardContent>
-              {server.system ? (
+              <div className="space-y-6">
+                {/* Operating System */}
                 <div>
-                  <h3 className="font-medium mb-2">Operating System</h3>
+                  <h3 className="text-lg font-medium mb-2">Operating System</h3>
                   <Table>
                     <TableBody>
                       <TableRow>
-                        <TableCell className="font-medium">OS</TableCell>
-                        <TableCell>{server.system.operatingSystem || "N/A"}</TableCell>
+                        <TableCell className="font-medium w-1/3">OS</TableCell>
+                        <TableCell>{server.system?.operatingSystem || "N/A"}</TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell className="font-medium">OS Version</TableCell>
-                        <TableCell>{server.system.osVersion || "N/A"}</TableCell>
+                        <TableCell>{server.system?.osVersion || "N/A"}</TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell className="font-medium">Kernel Version</TableCell>
-                        <TableCell>{server.system.kernelVersion || "N/A"}</TableCell>
+                        <TableCell>{server.system?.kernelVersion || "N/A"}</TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell className="font-medium">Last Boot Time</TableCell>
-                        <TableCell>{server.system.lastBootTime || "N/A"}</TableCell>
+                        <TableCell>
+                          {server.system?.lastBootTime ? formatDate(server.system.lastBootTime) : "N/A"}
+                        </TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell className="font-medium">Uptime</TableCell>
-                        <TableCell>{server.system.uptime || "N/A"}</TableCell>
+                        <TableCell>{server.system?.uptime || "N/A"}</TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell className="font-medium">Load Average</TableCell>
-                        <TableCell>{server.system.loadAverage || "N/A"}</TableCell>
+                        <TableCell>{server.system?.loadAverage || "N/A"}</TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell className="font-medium">Users</TableCell>
-                        <TableCell>{server.system.users !== undefined ? server.system.users : "N/A"}</TableCell>
+                        <TableCell>{server.system?.users !== undefined ? server.system.users : "N/A"}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
-
-                  <div className="mt-4">
-                    <h3 className="font-medium mb-2">Firmware</h3>
-                    <Table>
-                      <TableBody>
-                        <TableRow>
-                          <TableCell className="font-medium">Firmware Version</TableCell>
-                          <TableCell>{server.firmwareVersion || "N/A"}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium">Firmware Verification</TableCell>
-                          <TableCell>{server.firmwareVerificationEnabled ? "Enabled" : "Disabled"}</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </div>
                 </div>
-              ) : (
-                <div className="text-center py-4">No system information available</div>
-              )}
+
+                {/* Firmware */}
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Firmware</h3>
+                  <Table>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium w-1/3">Firmware Version</TableCell>
+                        <TableCell>{server.firmwareVersion || "N/A"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Firmware Verification</TableCell>
+                        <TableCell>
+                          <Badge variant={server.firmwareVerificationEnabled ? "default" : "destructive"}>
+                            {server.firmwareVerificationEnabled ? "Enabled" : "Disabled"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

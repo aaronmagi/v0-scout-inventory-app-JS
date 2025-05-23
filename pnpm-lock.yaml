@@ -13,13 +13,13 @@ importers:
         version: 11.13.5
       '@grafana/data':
         specifier: latest
-        version: 12.0.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 12.0.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@grafana/runtime':
         specifier: latest
-        version: 12.0.0(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2)
+        version: 12.0.1(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2)
       '@grafana/ui':
         specifier: latest
-        version: 12.0.0(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2)
+        version: 12.0.1(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2)
       '@hookform/resolvers':
         specifier: ^3.9.1
         version: 3.9.1(react-hook-form@7.54.1(react@19.0.0))
@@ -320,14 +320,14 @@ packages:
   '@formatjs/intl-localematcher@0.6.1':
     resolution: {integrity: sha512-ePEgLgVCqi2BBFnTMWPfIghu6FkbZnnBVhO2sSxvLfrdFw7wCHAHiDoM2h4NRgjbaY7+B7HgOLZGkK187pZTZg==}
 
-  '@grafana/data@12.0.0':
-    resolution: {integrity: sha512-hUCq5hZ/PojC5eGQdyOSVnpEkyKutIeYW9E8ABUCaEz/03T5+QiA6+BhNXK405Yd9cJO6W4KcqqtPvtqjgcFkQ==}
+  '@grafana/data@12.0.1':
+    resolution: {integrity: sha512-XnAzNltJsuTUqlYuExfDNhuQgls7i7l+RtxtywiJCJDX414WnWs7kcH05suHBoIi1s36TrsqJ5ckP3/f7Xpocw==}
     peerDependencies:
       react: ^18.0.0
       react-dom: ^18.0.0
 
-  '@grafana/e2e-selectors@12.0.0':
-    resolution: {integrity: sha512-NKPx2LTFJ4qJBxaQ4ak0lG0Bj3NfrozoK5R8RLDhFs/wHrea2o5MFktwiq/cFvNf8L9W+LQ4tNbrB79UVXbEyA==}
+  '@grafana/e2e-selectors@12.0.1':
+    resolution: {integrity: sha512-SLTTOJ+bGBW64ghCG0H+6F5WOIUGVI6nN95yvxGjJUzZnZyg4oBjggkPp+Zaltlhs1ocSfQka5tMJ8IK+D+YAA==}
 
   '@grafana/faro-core@1.18.2':
     resolution: {integrity: sha512-+yHUfxvVgEkd3WnhEKQMWAyZ+qB2fvtCqbmngcU+VpCVufWhT480eqc46Gpz5GdhupLNPQu+FLhjyD4baX/owQ==}
@@ -335,20 +335,20 @@ packages:
   '@grafana/faro-web-sdk@1.18.2':
     resolution: {integrity: sha512-tQYMJ1iOF2MTCACB05cUk3E0bP6Uj0zmSvfWyyArjQfyMWs/TW++cKhxGFKDOn7t/bj1sTvk3QqP0b7ecL5qrw==}
 
-  '@grafana/runtime@12.0.0':
-    resolution: {integrity: sha512-GSugxjqQuoOtkYP1KrdQA1XGZe0Br6+QYAt/f6hTCQY0RUroIJKIbCecB+dJjqipbm9sdHKzHg94UHOL5QqpAg==}
+  '@grafana/runtime@12.0.1':
+    resolution: {integrity: sha512-gLXDhTEMWWHhKGlpnfoesMul2KKwtDk8MfexW3HmZ2thngCdMTuEyCgGQdDN3BlQLkDd6orbkTQ4vrO9V3yqrg==}
     peerDependencies:
       react: ^18.0.0
       react-dom: ^18.0.0
 
-  '@grafana/schema@12.0.0':
-    resolution: {integrity: sha512-wUJ+QCR97In5B+7OOR7Ma2If/SkP8IBM/NTWFLMKJ9x7jJLDYeUaJYIh0lCQPE4RvtxbO6MbgXQcfsF7pl4Ogw==}
+  '@grafana/schema@12.0.1':
+    resolution: {integrity: sha512-11L8Mkyjnq2ZsXPFte6lwUvJbg5VnAw49au82C18DmIK5vHgZ0OejxlN09M53zaVXJvilHnLPXrPVKZuE9NSGA==}
 
   '@grafana/tsconfig@2.0.0':
     resolution: {integrity: sha512-cxC3Htv/GidI5FeVGAzj/lYZTMMz/Cfsc8VOQFO3Ichjx3hUjyjeoBUIpVSVMnIjKUdA5ycdxtMYPHIuIrk8+A==}
 
-  '@grafana/ui@12.0.0':
-    resolution: {integrity: sha512-UEFXFUe9CiatddmbKSX+q8kel7uDY+uEIk/3oiCnKrIq73CJw2ddxVkVX6busAbeIrfOFEUxxwaTk4jmagDqjQ==}
+  '@grafana/ui@12.0.1':
+    resolution: {integrity: sha512-qiRh9/P0JRBDb8SyuZV//mzvpsvYLX/gwru/e2P5SXPfrF8D8GeLzZGIPKrO7tb5TvBd97DvtH58YyMzu+La5A==}
     peerDependencies:
       react: ^18.0.0
       react-dom: ^18.0.0
@@ -1907,8 +1907,8 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
 
-  electron-to-chromium@1.5.155:
-    resolution: {integrity: sha512-ps5KcGGmwL8VaeJlvlDlu4fORQpv3+GIcF5I3f9tUKUlJ/wsysh6HU8P5L1XWRYeXfA0oJd4PyM8ds8zTFf6Ng==}
+  electron-to-chromium@1.5.157:
+    resolution: {integrity: sha512-/0ybgsQd1muo8QlnuTpKwtl0oX5YMlUGbm8xyqgDU00motRkKFFbUJySAQBWcY79rVqNLWIWa87BGVGClwAB2w==}
 
   embla-carousel-react@8.5.1:
     resolution: {integrity: sha512-z9Y0K84BJvhChXgqn2CFYbfEi6AwEr+FFVVKm/MqbTQ2zIzO1VQri6w67LcfpVF0AjbhwVMywDZqY4alYkjW5w==}
@@ -2662,8 +2662,8 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
 
-  react-i18next@15.5.1:
-    resolution: {integrity: sha512-C8RZ7N7H0L+flitiX6ASjq9p5puVJU1Z8VyL3OgM/QOMRf40BMZX+5TkpxzZVcTmOLPX5zlti4InEX5pFyiVeA==}
+  react-i18next@15.5.2:
+    resolution: {integrity: sha512-ePODyXgmZQAOYTbZXQn5rRsSBu3Gszo69jxW6aKmlSgxKAI1fOhDwSu6bT4EKHciWPKQ7v7lPrjeiadR6Gi+1A==}
     peerDependencies:
       i18next: '>= 23.2.3'
       react: '>= 16.8.0'
@@ -3454,10 +3454,10 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@grafana/data@12.0.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+  '@grafana/data@12.0.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       '@braintree/sanitize-url': 7.0.1
-      '@grafana/schema': 12.0.0
+      '@grafana/schema': 12.0.1
       '@types/d3-interpolate': 3.0.4
       '@types/string-hash': 1.1.3
       '@types/systemjs': 6.15.1
@@ -3484,7 +3484,7 @@ snapshots:
       uplot: 1.6.32
       xss: 1.0.15
 
-  '@grafana/e2e-selectors@12.0.0':
+  '@grafana/e2e-selectors@12.0.1':
     dependencies:
       '@grafana/tsconfig': 2.0.0
       semver: 7.7.2
@@ -3502,13 +3502,13 @@ snapshots:
       ua-parser-js: 1.0.40
       web-vitals: 4.2.4
 
-  '@grafana/runtime@12.0.0(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2)':
+  '@grafana/runtime@12.0.1(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2)':
     dependencies:
-      '@grafana/data': 12.0.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      '@grafana/e2e-selectors': 12.0.0
+      '@grafana/data': 12.0.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@grafana/e2e-selectors': 12.0.1
       '@grafana/faro-web-sdk': 1.18.2
-      '@grafana/schema': 12.0.0
-      '@grafana/ui': 12.0.0(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2)
+      '@grafana/schema': 12.0.1
+      '@grafana/ui': 12.0.1(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2)
       '@types/systemjs': 6.15.1
       history: 4.10.1
       lodash: 4.17.21
@@ -3526,22 +3526,22 @@ snapshots:
       - supports-color
       - typescript
 
-  '@grafana/schema@12.0.0':
+  '@grafana/schema@12.0.1':
     dependencies:
       tslib: 2.8.1
 
   '@grafana/tsconfig@2.0.0': {}
 
-  '@grafana/ui@12.0.0(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2)':
+  '@grafana/ui@12.0.1(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2)':
     dependencies:
       '@emotion/css': 11.13.5
       '@emotion/react': 11.14.0(@types/react@19.0.0)(react@19.0.0)
       '@emotion/serialize': 1.3.3
       '@floating-ui/react': 0.27.7(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      '@grafana/data': 12.0.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      '@grafana/e2e-selectors': 12.0.0
+      '@grafana/data': 12.0.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@grafana/e2e-selectors': 12.0.1
       '@grafana/faro-web-sdk': 1.18.2
-      '@grafana/schema': 12.0.0
+      '@grafana/schema': 12.0.1
       '@hello-pangea/dnd': 17.0.0(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@leeoniya/ufuzzy': 1.0.18
       '@monaco-editor/react': 4.6.0(monaco-editor@0.34.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -3585,7 +3585,7 @@ snapshots:
       react-dropzone: 14.3.5(react@19.0.0)
       react-highlight-words: 0.21.0(react@19.0.0)
       react-hook-form: 7.54.1(react@19.0.0)
-      react-i18next: 15.5.1(i18next@24.2.3(typescript@5.0.2))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2)
+      react-i18next: 15.5.2(i18next@24.2.3(typescript@5.0.2))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2)
       react-inlinesvg: 4.2.0(react@19.0.0)
       react-loading-skeleton: 3.5.0(react@19.0.0)
       react-router-dom: 5.3.4(react@19.0.0)
@@ -4886,7 +4886,7 @@ snapshots:
   browserslist@4.24.5:
     dependencies:
       caniuse-lite: 1.0.30001718
-      electron-to-chromium: 1.5.155
+      electron-to-chromium: 1.5.157
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.24.5)
 
@@ -5214,7 +5214,7 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  electron-to-chromium@1.5.155: {}
+  electron-to-chromium@1.5.157: {}
 
   embla-carousel-react@8.5.1(react@19.0.0):
     dependencies:
@@ -5954,7 +5954,7 @@ snapshots:
     dependencies:
       react: 19.0.0
 
-  react-i18next@15.5.1(i18next@24.2.3(typescript@5.0.2))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2):
+  react-i18next@15.5.2(i18next@24.2.3(typescript@5.0.2))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.0.2):
     dependencies:
       '@babel/runtime': 7.27.1
       html-parse-stringify: 3.0.1

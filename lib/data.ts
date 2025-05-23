@@ -2,6 +2,7 @@ export interface Server {
   id: string
   ipAddress: string
   name: string
+  hostname: string // Added hostname field
   identifier: string
   model: string
   type: string
@@ -84,7 +85,7 @@ export interface StorageInfo {
   type: string
   model: string
   capacity: string
-  interface: string
+  protocol: string // Changed from interface to protocol
   firmwareVersion?: string // Added firmware version
   status: string
 }
@@ -103,10 +104,10 @@ export interface PowerInfo {
 export interface NetworkInfo {
   id: string
   macAddress: string
+  ipAddresses?: string[] // Will be displayed inline after MAC address
   type: string
   speed: string
   status: string
-  ipAddresses?: string[]
 }
 
 export interface SystemInfo {
@@ -144,6 +145,8 @@ const generateAdditionalServers = (count: number): Server[] => {
   const managedByServers = ["mgmt-server-01", "mgmt-server-02", "mgmt-server-03", null]
   const mappedApplications = ["ERP System", "CRM System", "Database Cluster", "Web Server", null]
   const managedByGroups = ["IT Operations", "Database Team", "Network Team", "Security Team", null]
+  const storageProtocols = ["SATA", "SAS", "PCIe", "NVMe", "FC"] // Updated from interface to protocol
+  const datacenters = ["bellevue", "seattle", "tacoma", "spokane", "portland"]
 
   // Generate random date within a range
   const randomDate = (start: Date, end: Date) => {
@@ -205,12 +208,19 @@ const generateAdditionalServers = (count: number): Server[] => {
     // Choose processor manufacturer based on model (Dell models use AMD, HP models use Intel)
     const processorManufacturer = isDell ? "AMD" : "Intel"
 
+    // Generate T-Mobile datacenter hostname
+    const datacenterIndex = Math.floor(Math.random() * datacenters.length)
+    const datacenterNum = Math.floor(Math.random() * 3) + 1
+    const serverNum = Math.floor(Math.random() * 100) + 1
+    const hostname = `tmobile-datacenter-${datacenters[datacenterIndex]}-${datacenterNum}-srv${serverNum.toString().padStart(3, "0")}`
+
     const server: Server = {
       id: i.toString(),
       ipAddress: `10.10.${ipOctet3}.${ipOctet4}`,
       name: isDell
         ? `srv-${selectedModel.model.toLowerCase().replace(/\s+/g, "-")}-${i}`
         : `${selectedModel.generation?.toLowerCase() || "server"}-${i}`,
+      hostname: hostname, // Added hostname with T-Mobile datacenter naming convention
       identifier,
       model: selectedModel.model,
       type: "Compute",
@@ -249,12 +259,13 @@ const generateAdditionalServers = (count: number): Server[] => {
   return servers
 }
 
-// Update the existing server data to include filter-related properties
+// Update the existing server data to include filter-related properties and hostnames
 export const serverData: Server[] = [
   {
     id: "1",
     ipAddress: "100.67.96.153",
     name: "100.67.96.153",
+    hostname: "tmobile-datacenter-bellevue-1-srv001",
     identifier: "1PVrRT3",
     model: "PowerEdge XR4510c",
     type: "Compute",
@@ -284,6 +295,7 @@ export const serverData: Server[] = [
     id: "2",
     ipAddress: "100.67.96.181",
     name: "100.67.96.181",
+    hostname: "tmobile-datacenter-bellevue-1-srv002",
     identifier: "3PVrRT3",
     model: "PowerEdge XR4510c",
     type: "Compute",
@@ -313,6 +325,7 @@ export const serverData: Server[] = [
     id: "3",
     ipAddress: "100.67.96.214",
     name: "100.67.96.214",
+    hostname: "tmobile-datacenter-bellevue-1-srv003",
     identifier: "JRWKZB3",
     model: "PowerEdge XR12",
     type: "Compute",
@@ -342,6 +355,7 @@ export const serverData: Server[] = [
     id: "4",
     ipAddress: "100.67.96.52",
     name: "100.67.96.52",
+    hostname: "tmobile-datacenter-bellevue-1-srv004",
     identifier: "901YYG",
     model: "PowerEdge XR7620",
     type: "Compute",
@@ -371,6 +385,7 @@ export const serverData: Server[] = [
     id: "5",
     ipAddress: "100.67.96.255",
     name: "100.67.96.255",
+    hostname: "tmobile-datacenter-bellevue-1-srv005",
     identifier: "JKP9Z3",
     model: "PowerEdge XR4520c",
     type: "Compute",
@@ -400,6 +415,7 @@ export const serverData: Server[] = [
     id: "6",
     ipAddress: "WIN-8C37DQ55QU",
     name: "WIN-8C37DQ55QU",
+    hostname: "tmobile-datacenter-bellevue-1-srv006",
     identifier: "PS75L3",
     model: "PowerEdge R650",
     type: "Compute",
@@ -429,6 +445,7 @@ export const serverData: Server[] = [
     id: "7",
     ipAddress: "100.67.97.215",
     name: "100.67.97.215",
+    hostname: "tmobile-datacenter-bellevue-1-srv007",
     identifier: "QZ15VH8",
     model: "PowerEdge R750",
     type: "Compute",
@@ -459,6 +476,7 @@ export const serverData: Server[] = [
     id: "8",
     ipAddress: "10.10.20.101",
     name: "hpe-gen9-01",
+    hostname: "tmobile-datacenter-bellevue-2-srv001",
     identifier: "SGH123XYZ1",
     model: "HPE ProLiant DL380 Gen9",
     type: "Compute",
@@ -490,6 +508,7 @@ export const serverData: Server[] = [
     id: "9",
     ipAddress: "10.10.20.102",
     name: "hpe-gen9-02",
+    hostname: "tmobile-datacenter-bellevue-2-srv002",
     identifier: "SGH123XYZ2",
     model: "HPE ProLiant DL360 Gen9",
     type: "Compute",
@@ -521,6 +540,7 @@ export const serverData: Server[] = [
     id: "10",
     ipAddress: "10.10.20.103",
     name: "hpe-gen10-01",
+    hostname: "tmobile-datacenter-bellevue-2-srv003",
     identifier: "SGH456ABC1",
     model: "HPE ProLiant DL380 Gen10",
     type: "Compute",
@@ -552,6 +572,7 @@ export const serverData: Server[] = [
     id: "11",
     ipAddress: "10.10.20.104",
     name: "hpe-gen10-02",
+    hostname: "tmobile-datacenter-bellevue-2-srv004",
     identifier: "SGH456ABC2",
     model: "HPE ProLiant DL360 Gen10",
     type: "Compute",
@@ -583,6 +604,7 @@ export const serverData: Server[] = [
     id: "12",
     ipAddress: "10.10.20.105",
     name: "hpe-gen10-03",
+    hostname: "tmobile-datacenter-bellevue-2-srv005",
     identifier: "SGH456ABC3",
     model: "HPE ProLiant DL325 Gen10",
     type: "Compute",
@@ -614,6 +636,7 @@ export const serverData: Server[] = [
     id: "13",
     ipAddress: "10.10.20.106",
     name: "hpe-gen10plus-01",
+    hostname: "tmobile-datacenter-bellevue-2-srv006",
     identifier: "SGH789DEF1",
     model: "HPE ProLiant DL380 Gen10 Plus",
     type: "Compute",
@@ -645,6 +668,7 @@ export const serverData: Server[] = [
     id: "14",
     ipAddress: "10.10.20.107",
     name: "hpe-gen10plus-02",
+    hostname: "tmobile-datacenter-bellevue-2-srv007",
     identifier: "SGH789DEF2",
     model: "HPE ProLiant DL360 Gen10 Plus",
     type: "Compute",
@@ -676,6 +700,7 @@ export const serverData: Server[] = [
     id: "15",
     ipAddress: "10.10.20.108",
     name: "hpe-gen11-01",
+    hostname: "tmobile-datacenter-bellevue-3-srv001",
     identifier: "SGH101GHI1",
     model: "HPE ProLiant DL380 Gen11",
     type: "Compute",
@@ -707,6 +732,7 @@ export const serverData: Server[] = [
     id: "16",
     ipAddress: "10.10.20.109",
     name: "hpe-gen11-02",
+    hostname: "tmobile-datacenter-bellevue-3-srv002",
     identifier: "SGH101GHI2",
     model: "HPE ProLiant DL360 Gen11",
     type: "Compute",
@@ -734,11 +760,11 @@ export const serverData: Server[] = [
     accountName: "admin",
     accountEnabled: true,
   },
-  // Dell Servers
   {
     id: "17",
     ipAddress: "10.10.30.101",
     name: "dell-r6515-01",
+    hostname: "tmobile-datacenter-bellevue-3-srv003",
     identifier: "7ABCDE1",
     model: "PowerEdge R6515",
     type: "Compute",
@@ -769,6 +795,7 @@ export const serverData: Server[] = [
     id: "18",
     ipAddress: "10.10.30.102",
     name: "dell-r6515-02",
+    hostname: "tmobile-datacenter-bellevue-3-srv004",
     identifier: "7ABCDE2",
     model: "PowerEdge R6515",
     type: "Compute",
@@ -799,6 +826,7 @@ export const serverData: Server[] = [
     id: "19",
     ipAddress: "10.10.30.103",
     name: "dell-r6515-03",
+    hostname: "tmobile-datacenter-bellevue-3-srv005",
     identifier: "7ABCDE3",
     model: "PowerEdge R6515",
     type: "Compute",
@@ -829,6 +857,7 @@ export const serverData: Server[] = [
     id: "20",
     ipAddress: "10.10.30.104",
     name: "dell-r740xd-01",
+    hostname: "tmobile-datacenter-seattle-1-srv001",
     identifier: "8FGHIJ1",
     model: "PowerEdge R740xd",
     type: "Compute",
@@ -859,6 +888,7 @@ export const serverData: Server[] = [
     id: "21",
     ipAddress: "10.10.30.105",
     name: "dell-r740xd-02",
+    hostname: "tmobile-datacenter-seattle-1-srv002",
     identifier: "8FGHIJ2",
     model: "PowerEdge R740xd",
     type: "Compute",
@@ -889,6 +919,7 @@ export const serverData: Server[] = [
     id: "22",
     ipAddress: "10.10.30.106",
     name: "dell-r740xd-03",
+    hostname: "tmobile-datacenter-seattle-1-srv003",
     identifier: "8FGHIJ3",
     model: "PowerEdge R740xd",
     type: "Compute",
@@ -987,17 +1018,18 @@ serverData.forEach((server) => {
 
   // Add 1-8 storage devices with firmware version
   const storageCount = Math.floor(Math.random() * 8) + 1
+  const storageProtocols = ["SATA", "SAS", "PCIe", "NVMe", "FC"] // Updated from interface to protocol
   server.storage = Array.from({ length: storageCount }, (_, i) => ({
     id: `DISK-${i}`,
     type: ["SSD", "HDD", "NVMe"][Math.floor(Math.random() * 3)],
     model: ["Samsung", "Intel", "Seagate", "WD", "Micron"][Math.floor(Math.random() * 5)],
     capacity: `${[240, 480, 960, 1920, 3840, 7680][Math.floor(Math.random() * 6)]}GB`,
-    interface: ["SATA", "SAS", "PCIe"][Math.floor(Math.random() * 3)],
+    protocol: storageProtocols[Math.floor(Math.random() * storageProtocols.length)], // Changed from interface to protocol
     firmwareVersion: `${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 100)}`,
     status: ["OK", "Warning", "Critical", "Unknown"][Math.floor(Math.random() * 4)],
   }))
 
-  // Add 1-4 network interfaces
+  // Add 1-4 network interfaces with IP addresses inline
   const networkCount = Math.floor(Math.random() * 4) + 1
   server.network = Array.from({ length: networkCount }, (_, i) => ({
     id: `NIC-${i}`,
@@ -1006,14 +1038,14 @@ serverData.forEach((server) => {
         .toString(16)
         .padStart(2, "0"),
     ).join(":"),
-    type: ["1GbE", "10GbE", "25GbE", "40GbE", "100GbE"][Math.floor(Math.random() * 5)],
-    speed: ["1 Gbps", "10 Gbps", "25 Gbps", "40 Gbps", "100 Gbps"][Math.floor(Math.random() * 5)],
-    status: ["OK", "Warning", "Critical", "Unknown"][Math.floor(Math.random() * 4)],
     ipAddresses: Array.from(
       { length: Math.floor(Math.random() * 3) + 1 },
       () =>
         `${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`,
     ),
+    type: ["1GbE", "10GbE", "25GbE", "40GbE", "100GbE"][Math.floor(Math.random() * 5)],
+    speed: ["1 Gbps", "10 Gbps", "25 Gbps", "40 Gbps", "100 Gbps"][Math.floor(Math.random() * 5)],
+    status: ["OK", "Warning", "Critical", "Unknown"][Math.floor(Math.random() * 4)],
   }))
 
   // Add 1-2 power supplies with name, serial number, and firmware version
@@ -1031,21 +1063,52 @@ serverData.forEach((server) => {
   }))
 
   // Add system information
-  server.system = {
-    operatingSystem: [
-      "Windows Server 2019",
-      "Windows Server 2022",
-      "Ubuntu 20.04 LTS",
-      "Ubuntu 22.04 LTS",
-      "RHEL 8",
-      "RHEL 9",
-    ][Math.floor(Math.random() * 6)],
-    osVersion: `${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 100)}`,
-    kernelVersion: `${Math.floor(Math.random() * 5)}.${Math.floor(Math.random() * 20)}.${Math.floor(Math.random() * 100)}`,
-    lastBootTime: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString(),
-    uptime: `${Math.floor(Math.random() * 30)} days, ${Math.floor(Math.random() * 24)} hours`,
-    loadAverage: `${(Math.random() * 2).toFixed(2)}, ${(Math.random() * 2).toFixed(2)}, ${(Math.random() * 2).toFixed(2)}`,
-    users: Math.floor(Math.random() * 10),
+  const osTypes = [
+    "Linux",
+    "Windows",
+    "VMware ESX",
+    "VMware OpenShift",
+    null, // No OS
+  ]
+
+  const osType = osTypes[Math.floor(Math.random() * osTypes.length)]
+
+  // Only create system info if there's an OS
+  if (osType) {
+    let osVersion = ""
+
+    // Set appropriate version based on OS type
+    if (osType === "Linux") {
+      osVersion = ["RHEL 8", "RHEL 9", "Ubuntu 20.04 LTS", "Ubuntu 22.04 LTS", "SUSE Linux Enterprise 15"][
+        Math.floor(Math.random() * 5)
+      ]
+    } else if (osType === "Windows") {
+      osVersion = ["Windows Server 2019", "Windows Server 2022", "Windows Server 2016"][Math.floor(Math.random() * 3)]
+    } else if (osType === "VMware ESX") {
+      osVersion = ["ESXi 7.0", "ESXi 8.0", "ESXi 6.7"][Math.floor(Math.random() * 3)]
+    } else if (osType === "VMware OpenShift") {
+      osVersion = ["OpenShift 4.10", "OpenShift 4.11", "OpenShift 4.12"][Math.floor(Math.random() * 3)]
+    }
+
+    server.system = {
+      operatingSystem: osType,
+      osVersion: osVersion,
+      kernelVersion: osType.includes("Linux")
+        ? `${Math.floor(Math.random() * 5)}.${Math.floor(Math.random() * 20)}.${Math.floor(Math.random() * 100)}`
+        : undefined,
+      lastBootTime: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString(),
+      uptime: `${Math.floor(Math.random() * 30)} days, ${Math.floor(Math.random() * 24)} hours`,
+      loadAverage: osType.includes("Linux")
+        ? `${(Math.random() * 2).toFixed(2)}, ${(Math.random() * 2).toFixed(2)}, ${(Math.random() * 2).toFixed(2)}`
+        : undefined,
+      users: Math.floor(Math.random() * 10),
+    }
+  } else {
+    // No OS installed
+    server.system = {
+      operatingSystem: null,
+      osVersion: null,
+    }
   }
 })
 
@@ -1083,7 +1146,7 @@ export interface Filter {
   category?: string
 }
 
-export const filterData: Filter[] = [
+export let filterData: Filter[] = [
   {
     id: "end-of-life",
     name: "End of Life",
@@ -1107,26 +1170,19 @@ export const filterData: Filter[] = [
   {
     id: "end-of-warranty",
     name: "End of Warranty",
-    description: "Servers with expired warranty",
+    description: "Servers with expired warranty or expiring within 6 months",
     createdBy: "System",
     createdAt: "2024-01-01",
     updatedAt: "2024-01-01",
     isPublic: true,
-    query: "warranty_end_date < CURRENT_DATE",
+    query: "warranty_end_date < DATE_ADD(CURRENT_DATE, INTERVAL 6 MONTH)",
     category: "Basic Filters",
     rules: [
       {
         id: "1",
-        field: "Warranty Info",
-        operator: "contains",
-        value: "expired",
-        logic: "OR",
-      },
-      {
-        id: "2",
-        field: "Warranty Info",
+        field: "warrantyEndDate",
         operator: "less than",
-        value: "2025-05-16",
+        value: "2025-11-22", // This date should be 6 months from today
         logic: "AND",
       },
     ],
@@ -1504,4 +1560,19 @@ export const filterData: Filter[] = [
 
 export function getFilterById(id: string): Filter | undefined {
   return filterData.find((filter) => filter.id === id)
+}
+
+export function saveFilter(filter: Filter): void {
+  const existingIndex = filterData.findIndex((f) => f.id === filter.id)
+  if (existingIndex >= 0) {
+    filterData[existingIndex] = filter
+  } else {
+    filterData.push(filter)
+  }
+}
+
+export function deleteFilter(id: string): boolean {
+  const initialLength = filterData.length
+  filterData = filterData.filter((f) => f.id !== id)
+  return filterData.length < initialLength
 }

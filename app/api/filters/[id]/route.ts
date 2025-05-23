@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server"
-import { getFilterById } from "@/lib/data"
+import { NextResponse } from "next/request"
+import { getFilterById, saveFilter } from "@/lib/data"
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   const filter = getFilterById(params.id)
@@ -20,13 +20,14 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
   const data = await request.json()
 
-  // In a real application, you would update this in a database
-  // For now, we'll just return the merged data
   const updatedFilter = {
     ...filter,
     ...data,
     updatedAt: new Date().toISOString(),
   }
+
+  // Save the updated filter
+  saveFilter(updatedFilter)
 
   return NextResponse.json(updatedFilter)
 }

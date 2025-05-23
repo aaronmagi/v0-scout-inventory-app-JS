@@ -9,9 +9,5 @@ export default function ServerPage({ params }: { params: { id: string } }) {
     notFound()
   }
 
-  return (
-    <div className="p-6">
-      <ServerDetail server={server} />
-    </div>
-  )
+  return <ServerDetail server={server} />
 }
