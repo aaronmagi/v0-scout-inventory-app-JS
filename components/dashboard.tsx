@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   CheckCircle,
   HelpCircle,
+  Search,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -33,6 +34,7 @@ import { toast } from "@/components/ui/use-toast"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { serverData as servers, filterData } from "@/lib/data"
 import { downloadCSV, serversToCSV } from "@/lib/csv-utils"
+import { AdvancedSearch } from "./advanced-search"
 
 interface ServerType {
   id: string
@@ -82,6 +84,8 @@ export function Dashboard() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [filters, setFilters] = useState<FilterType[]>(filterData)
   const [selectedFilter, setSelectedFilter] = useState("all-servers")
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false)
+  const [activeSearchRules, setActiveSearchRules] = useState<any[]>([])
 
   useEffect(() => {
     applyFiltersAndSort()
@@ -258,6 +262,13 @@ export function Dashboard() {
     })
   }
 
+  const handleAdvancedSearch = (filteredServers: ServerType[], rules: any[]) => {
+    setFilteredServersData(filteredServers)
+    setActiveSearchRules(rules)
+    setCurrentPage(1) // Reset to first page when searching
+    setTotalPages(Math.ceil(filteredServers.length / itemsPerPage))
+  }
+
   // Calculate pagination - apply pagination AFTER sorting
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
@@ -398,20 +409,29 @@ export function Dashboard() {
         </Card>
       </div>
 
-      {/* Search bar */}
+      {/* Search bar with Advanced Search button */}
       <div className="flex items-center space-x-2 mb-6">
-        <Input
-          placeholder="Search servers..."
-          value={searchQuery}
-          onChange={(e) => handleSearch(e.target.value)}
-          className="max-w-sm"
-        />
+        <div className="relative flex-grow max-w-sm">
+          <Input placeholder="Search servers..." value={searchQuery} onChange={(e) => handleSearch(e.target.value)} />
+        </div>
+        <Button variant="outline" onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}>
+          <Search className="h-4 w-4 mr-2" />
+          Advanced Search
+        </Button>
       </div>
+
+      {/* Advanced Search Panel */}
+      {showAdvancedSearch && (
+        <div className="mb-6">
+          <AdvancedSearch onSearch={handleAdvancedSearch} servers={servers} />
+        </div>
+      )}
 
       {/* Saved Filters Section */}
       <div className="bg-white rounded-lg shadow mb-6 p-4">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center">
+            <span className="mr-3 font-medium">Filters:</span>
             <Select value={selectedFilter} onValueChange={handleSavedFilterChange}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="All Servers" />
@@ -450,6 +470,29 @@ export function Dashboard() {
         </div>
       </div>
 
+      {/* Active search rules indicator */}
+      {activeSearchRules.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4 flex justify-between items-center">
+          <div>
+            <span className="font-medium text-blue-700">Advanced Search:</span>{" "}
+            <span className="text-blue-600">
+              {activeSearchRules.length} rule{activeSearchRules.length !== 1 ? "s" : ""} applied
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setFilteredServersData(servers)
+              setActiveSearchRules([])
+              setShowAdvancedSearch(false)
+            }}
+          >
+            Clear Search
+          </Button>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Server Inventory</CardTitle>
@@ -471,9 +514,6 @@ export function Dashboard() {
                 <TableHead className="cursor-pointer" onClick={() => handleSort("identifier")}>
                   Identifier {renderSortIndicator("identifier")}
                 </TableHead>
-                {/* <TableHead className="cursor-pointer" onClick={() => handleSort("managedState")}>
-                  Managed State {renderSortIndicator("managedState")}
-                </TableHead> */}
                 <TableHead className="cursor-pointer" onClick={() => handleSort("operatingSystem")}>
                   Operating System {renderSortIndicator("operatingSystem")}
                 </TableHead>
@@ -504,7 +544,6 @@ export function Dashboard() {
                     <TableCell>{server.ipAddress}</TableCell>
                     <TableCell>{server.model}</TableCell>
                     <TableCell>{server.identifier}</TableCell>
-                    {/* <TableCell>{server.managedState}</TableCell> */}
                     <TableCell>
                       {server.system?.operatingSystem
                         ? `${server.system.operatingSystem}${server.system.osVersion ? ` (${server.system.osVersion})` : ""}`
